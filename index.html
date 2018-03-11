@@ -1,0 +1,57 @@
+<html>
+    <head>
+        <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+        <script src="webApp.js"></script>
+        <style>
+            #mainCanvas{
+                border : 1px solid black;
+            }
+        </style>
+    </head>
+    <body>
+        <h1 id="test"></h1>
+        <div id='top'>
+            
+        </div>
+        <div id="canvas">
+            <canvas id="mainCanvas" width="5000" height="900"></canvas>
+        </div>
+
+        <script>    
+
+            const DATA_TYPE_CLEAR = 0;
+            const DATA_TYPE_LINES =  1;
+            const X = 0;
+            const Y = 1;
+
+            let data;
+            let c=document.getElementById("mainCanvas");
+            let ctx=c.getContext("2d");
+            
+            const parseData = () => {
+                for (dat of data){
+                    if (dat.type === DATA_TYPE_LINES){
+                        ctx.beginPath();
+                        ctx.moveTo(dat.points[0][X], dat.points[0][Y])
+                        dat.points.shift();
+                        for (point of dat.points){
+                            ctx.lineWidth = 3;
+                            ctx.lineTo(point[X], point[Y]);
+                        }
+                        ctx.strokeStyle = dat.color;
+                        ctx.stroke();
+                        ctx.closePath();
+                    }else if(dat.type === DATA_TYPE_CLEAR){
+                        ctx.clearRect(0,0,5000,900)
+                    }
+                }
+            }
+
+            const refresh = (param) => {
+                data = JSON.parse(param);
+                parseData();
+            }
+            connectServer(refresh);
+        </script>
+    </body>
+</html>
