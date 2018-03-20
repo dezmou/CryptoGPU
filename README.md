@@ -29,5 +29,9 @@ An gif will be more comprehensible :
 
 So a valid situation should always be between the to red lines to be "similar" to the black one.  
 
-The next commit should display some...
+Here an example of situation "matching" another 
 
+![figure 2](fig_1.gif)  
+
+I have only use 4000 minutes of datas to find this .
+Next step I will try with a C algorithm with 10 000 000 minutes of datas
