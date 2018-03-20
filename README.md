@@ -29,7 +29,7 @@ An gif will be more comprehensible :
 
 So a valid situation should always be between the to red lines to be "similar" to the black one.  
 
-Here an example of situation "matching" another 
+Here an example of situation "matching" another with bubble-match™ this time
 
 ![figure 2](fig_1.gif)  
 
