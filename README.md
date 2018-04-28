@@ -31,7 +31,22 @@ So a valid situation should always be between the to red lines to be "similar" t
 
 Here an example of situation "matching" another with bubble-match™ this time
 
-![figure 2](fig_1.gif)  
+ ![figure 2](fig_1.gif) 
 
-I have only use 4000 minutes of datas to find this .
-Next step I will try with a C algorithm with 10 000 000 minutes of datas
+## I need more data
+
+I get prices data every minutes from 2000 differents altcoins and I stock it into a mysql database.  
+Prices aren't the only information a bot can use, for example, the amount of time a currency is mentionned on tweeter seem to be a usefull information.  
+Lets use the Tweeter API to get and save in real time every tweets that's mention the keywords : 
+ - blockchain
+ - cryptocurrency
+ - altcoin
+ - #ICO
+
+ With those, I save more than 300K tweets per day, lets see the most redundant cited currency from last days: 
+
+ ![figure 3](tweets.png)
+
+ Seem's like peoples are talking about TRX today that's interesting.
+ You can see this chart updated every hours here : 
+ http://dezmou.tk/graph.html

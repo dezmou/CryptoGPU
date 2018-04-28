@@ -1,0 +1,87 @@
+<html>
+    <head>
+        <title>
+            Crypto Popularity
+        </title>
+        <script
+      src="https://code.jquery.com/jquery-3.3.1.min.js"
+      integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+      crossorigin="anonymous"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.js"></script>
+    </head>
+    <body>
+        <div id="top">
+            <h2>
+                <center>Chart popularity of the top 7 mentionned cryptocurrencys on Tweeter from last hour</center>
+            </h2>
+        </div>
+
+        <canvas id="line-chart" width="800" height="450"></canvas>
+        <script>
+            let data = null;
+            const main = async () =>{
+                let colors = [
+                    '#800000',
+                    '#ff9933',
+                    '#cc99ff',
+                    '#666633',
+                    '#33ccff',
+                    '#3333ff',
+                    '#339966'
+                ]
+                console.log(data);
+                let labels = []
+                for (let point of data[0].graph){
+                    let date = new Date(point.time * 1000);
+                    let hours = date.getHours();
+                    labels.push(hours+"h")
+                }
+                let sets = [];
+                let i = -1;
+                for (let coin of data){
+                    i++;
+                    let pops = []
+                    for (let pop of coin.graph){
+                        pops.push(pop.pop);
+                    }
+                    sets.push({
+                        data : pops,
+                        label : coin.name,
+                        borderColor : colors[i],
+                        fill : false
+                    });    
+                }
+                new Chart(document.getElementById("line-chart"), {
+                  type: 'line',
+                  data: {
+                    labels : labels,
+                    datasets : sets
+
+                  },
+                  options: {
+                    title: {
+                      display: true,
+                      text: 'Crypto Tweeter mentions'
+                    },
+                    animation: {
+                        duration: 0, 
+                    },
+                    hover: {
+                        animationDuration: 0, 
+                    },
+                    responsiveAnimationDuration: 0,
+                  }
+                });
+            }
+            const start = () => {
+                console.log('refresh');
+                $.getJSON('graph.json', (res) => {
+                    data = res
+                    main();
+                });
+            }
+            start();
+            setInterval(start, 600000);//overkill hourly update yeah
+        </script>
+    </body>
+</html>
