@@ -37,7 +37,7 @@ Here an example of situation "matching" another with bubble-match™ this time
 
 I get prices data every minutes from 2000 differents altcoins and I stock it into a mysql database.  
 Prices aren't the only information a bot can use, for example, the amount of time a currency is mentionned on tweeter seem to be a usefull information.  
-Lets use the Tweeter API to get and save in real time every tweets that's mention the keywords : 
+Lets use the Twitter API to get and save in real time every tweets that's mention the keywords : 
  - blockchain
  - cryptocurrency
  - altcoin
