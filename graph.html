@@ -10,13 +10,15 @@
       <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.js"></script>
     </head>
     <body>
-        <div id="top">
-            <h2>
-                <center>Chart popularity of the top 7 mentionned cryptocurrencys on Tweeter from last hour</center>
-            </h2>
-        </div>
+        <div id="main" style="height:100%; witdh:100%">
+            <div id="top">
+                <h2>
+                    <center>Chart popularity of the top 7 mentionned cryptocurrencys on Tweeter from last hour</center>
+                </h2>
+            </div>
 
-        <canvas id="line-chart" width="800" height="450"></canvas>
+            <canvas id="line-chart" width="800" height="450"></canvas>
+        </div>
         <script>
             let data = null;
             const main = async () =>{
