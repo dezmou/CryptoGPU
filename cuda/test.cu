@@ -1,42 +1,30 @@
-// This is the REAL "hello world" for CUDA!
-// It takes the string "Hello ", prints it, then passes it to CUDA with an array
-// of offsets. Then the offsets are added in parallel to produce the string "World!"
-// By Ingemar Ragnemalm 2010
- 
-#include <stdio.h>
- 
-const int N = 16; 
-const int blocksize = 16; 
- 
-__global__ 
-void hello(char *a, int *b) 
+#include <iostream>
+#include <math.h>
+// Kernel function to add the elements of two arrays
+__global__
+void add(int n, float *y)
 {
-	a[threadIdx.x] += b[threadIdx.x];
+  // int index = threadIdx.x;
+  // int stride = blockDim.x;
+  printf("blockIdx.x: %d  threadIdx.x: %d gridDim.x: %d blockDim.x: %d\n", blockDim.x, threadIdx.x, gridDim.x, blockIdx.x);
 }
- 
-int main(){
-    char a[N] = "Hello \0\0\0\0\0\0";
-	int b[N] = {15, 10, 6, 0, -11, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
- 
-	char *ad;
-	int *bd;
-	const int csize = N*sizeof(char);
-	const int isize = N*sizeof(int);
- 
-	printf("%s", a);
- 
-	cudaMalloc( (void**)&ad, csize ); 
-	cudaMalloc( (void**)&bd, isize ); 
-	cudaMemcpy( ad, a, csize, cudaMemcpyHostToDevice ); 
-	cudaMemcpy( bd, b, isize, cudaMemcpyHostToDevice ); 
-	
-	dim3 dimBlock( blocksize, 1 );
-	dim3 dimGrid( 1, 1 );
-	hello<<<dimGrid, dimBlock>>>(ad, bd);
-	cudaMemcpy( a, ad, csize, cudaMemcpyDeviceToHost ); 
-	cudaFree( ad );
-	cudaFree( bd );
-	
-	printf("%s\n", a);
-	return EXIT_SUCCESS;
+
+int main(void)
+{
+  int n = 1;
+  float *y;
+  // Allocate Unified Memory – accessible from CPU or GPU
+  cudaMallocManaged(&y, n*sizeof(float));
+  y[0] = 5;
+  add<<<10, 1>>>(n, y);
+
+  // Wait for GPU to finish before accessing on host
+  cudaDeviceSynchronize();
+
+  // Check for errors (all values should be 3.0f)
+
+  // Free memory
+  cudaFree(y);
+  
+  return 0;
 }

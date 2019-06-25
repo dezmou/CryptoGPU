@@ -1,3 +1,5 @@
+# Take data from the internet in many CSV files from binance history and give it to mysql
+
 import datetime
 import os
 from os import listdir
@@ -32,10 +34,12 @@ cursor = db.cursor()
 #     cursor.execute("INSERT INTO coin_name (name) VALUES ('{}')".format(cur))
 # db.commit()
 
+
 cursor.execute("SELECT * FROM coin_name ORDER BY id ASC")
 res = cursor.fetchall()
 for coin in res:
     print(coin)
+    if coin[0] < 123: continue
     with open("../data/raw/{}.csv".format(coin[1]), "r") as f:
         lines = f.read().split("\n")[:-1][1:]
     lastStamp = 0
@@ -59,5 +63,15 @@ for coin in res:
             lastStamp = stamp
         except Exception as e: print (str(e))
     # break
+
+
+# """list coins"""
+# cursor.execute("SELECT * FROM coin_name ORDER BY id ASC")
+# res = cursor.fetchall()
+# for coin in res:
+#     print(coin)
+#     chien = cursor.execute("SELECT * FROM coin_price WHERE coin_name_id = {} LIMIT 1;".format(coin[0]))
+#     print(cursor.fetchall())
+
 
 db.close()
