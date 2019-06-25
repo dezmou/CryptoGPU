@@ -26,7 +26,7 @@ with open("../data/bin/full", "wb") as f:
         coins = cursor.fetchall()
         nbrCoins = len(coins)
         indexCoin = 0
-        binaryLine = struct.pack('l', time)
+        binaryLine = struct.pack('d', time)
         for indexId in range(1,163):
             if indexCoin < nbrCoins:
                 coin = coins[indexCoin]
