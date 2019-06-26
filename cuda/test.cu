@@ -9,6 +9,19 @@ void add(int n, float *y)
   printf("blockIdx.x: %d  threadIdx.x: %d gridDim.x: %d blockDim.x: %d\n", blockDim.x, threadIdx.x, gridDim.x, blockIdx.x);
 }
 
+Minute **loadHistory(int start, int amount) {
+    int fd = open("../data/bin/full", O_RDONLY);
+    Minute **minutes;
+    cudaMallocManaged(&minutes, sizeof(void **) * amount);
+    int i = -1;
+    while (1) {
+        i++;
+        cudaMallocManaged(&minutes[i], sizeof(Minute));
+        if (read(fd, minutes[i], sizeof(Minute)) < 1 || i == AMOUNT_TEST) break;
+    }
+    return minutes;
+}
+
 int main(void)
 {
   int n = 1;

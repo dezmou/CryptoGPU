@@ -5,8 +5,9 @@
 
 #define SIT_SIZE 200
 #define NBR_COIN 162
-#define BUF 6488
-#define MINIMAL_COINS 100
+#define NBR_MINUTES 881003
+#define AMOUNT_TEST 10000
+#define NBR_BLOCK 128
 
 typedef struct {
     double open;
@@ -21,29 +22,63 @@ typedef struct {
     Data data[NBR_COIN];
 } Minute;
 
+typedef struct {
+    Minute **minutes;
+    int endIndex;
+
+} Situation;
+
+typedef struct {
+    Minute **minutes;
+} Env;
+
+Env env; 
+
 __global__ void test(Minute **minutes) {
-    printf("GLOBAL CALL\n");
-    for (int i=0 ;i < 50000 ; i++){
-        printf("%lf - %lf\n", minutes[i]->data[3].open, minutes[i]->data[3].volume);
-    }
+    // int coinId = threadIdx.x;
+    // int minuteId = blockDim.x;
+
+    // printf("")
+
+    // for (int i = 0; i < AMOUNT_TEST; i++) {
+    //     printf("%lf - %lf\n", minutes[i]->data[3].open,
+    //            minutes[i]->data[3].volume);
+    // }
 }
 
-int main() {
-    // Minute *minute;
+/**
+ * Load history in RAM and VRAM
+ */
+Minute **loadHistory(int start, int amount) {
     int fd = open("../data/bin/full", O_RDONLY);
-    // char *tmpStr = malloc(163);
-    // tmpStr[162] = 0;
-    // int total = 0;
     Minute **minutes;
-    cudaMallocManaged(&minutes, sizeof(void **) * 900000);
+    cudaMallocManaged(&minutes, sizeof(void **) * amount);
     int i = -1;
     while (1) {
         i++;
         cudaMallocManaged(&minutes[i], sizeof(Minute));
-        if (read(fd, minutes[i], BUF) < 1) break;
+        if (read(fd, minutes[i], sizeof(Minute)) < 1 || i == AMOUNT_TEST) break;
     }
-    test<<<1, 1>>>(minutes);
+    return minutes;
+}
+
+/**
+ * Compare Given situation with all history
+ */
+void bakeSituation() {}
+
+/**
+ * Export situation to external program
+ */
+void printSituation() {}
+
+int main() {
+    env.minutes = loadHistory(0, AMOUNT_TEST);
+    printf("history loaded\n");
+    
+    test<<<NBR_BLOCK, NBR_COIN>>>(env.minutes);
     cudaDeviceSynchronize();
+    
     printf("done\n");
     return 0;
 }
