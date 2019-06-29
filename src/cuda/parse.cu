@@ -6,7 +6,7 @@
 #define SIT_SIZE 200
 #define NBR_COIN 162
 #define NBR_MINUTES 881003
-#define AMOUNT_TEST 10000
+#define AMOUNT_TEST 100000
 #define NBR_BLOCK 128
 
 typedef struct {
@@ -74,8 +74,7 @@ void printSituation() {}
 
 int main() {
     env.minutes = loadHistory(0, AMOUNT_TEST);
-    printf("history loaded\n");
-    
+    int nbrIteration = NBR_MINUTES / NBR_BLOCK;
     test<<<NBR_BLOCK, NBR_COIN>>>(env.minutes);
     cudaDeviceSynchronize();
     
