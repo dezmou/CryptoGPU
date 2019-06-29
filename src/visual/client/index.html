@@ -1,0 +1,47 @@
+<html>
+
+<head>
+  <script src="propagande.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.bundle.js"></script>
+  <style>
+    #main {
+      border: 1px solid red;
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="main" width="1000" height="1000"></canvas>
+  <script>
+    const DATE = 0;
+    const OPEN = 1;
+    const HIGH = 2;
+    const LOW = 3;
+    const CLOSE = 4;
+    const VOLUME = 5;
+
+    (async () => {
+      let canvas = document.getElementById("main");
+      let ctx = canvas.getContext("2d");
+
+      const propagandeApp = await propagandeClient({
+        appName: "cuda",
+        url: 'http://cuda:4000'
+      })
+      propagandeApp.addRoute("printSituation", (lines) => {
+        ctx.beginPath()
+        x = 0;
+        ctx.moveTo(0,500);
+        for (let line of lines) {
+          ratio = line[1] / lines[0][1];
+          console.log(ratio);
+          ctx.lineTo(x, 500 + ratio * 100);
+          x += 5;
+        }
+        ctx.stroke();
+      })
+    })()
+  </script>
+</body>
+
+</html>
