@@ -32,7 +32,7 @@ typedef struct {
     Minute **minutes;
 } Env;
 
-Env env; 
+Env env;
 
 __global__ void test(Minute **minutes) {
     // int coinId = threadIdx.x;
@@ -73,11 +73,16 @@ void bakeSituation() {}
 void printSituation() {}
 
 int main() {
-    env.minutes = loadHistory(0, AMOUNT_TEST);
-    int nbrIteration = NBR_MINUTES / NBR_BLOCK;
-    test<<<NBR_BLOCK, NBR_COIN>>>(env.minutes);
-    cudaDeviceSynchronize();
-    
-    printf("done\n");
+    // printf("CHIEN\n");
+    // env.minutes = loadHistory(0, AMOUNT_TEST);
+    // int nbrIteration = NBR_MINUTES / NBR_BLOCK;
+    // test<<<NBR_BLOCK, NBR_COIN>>>(env.minutes);
+    // cudaDeviceSynchronize();
+    // printf("done\n");
+    dprintf(1, "#LE CHIEN\n");
+    dprintf(1, "#LE RIEN\n");
+    dprintf(1, "#LE CASSOULET\n");
+    getchar();
+    dprintf(1, "#LE MOULINSARD\n");
     return 0;
 }

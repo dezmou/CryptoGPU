@@ -1,0 +1,38 @@
+<html>
+
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pouchdb/7.1.1/pouchdb.js">
+  </script>
+</head>
+
+<body>
+  <script>
+
+    const onMessage = (message) => {
+      console.log(message);
+    }
+
+    const onSignal = (signal) => {
+      const datas = signal.split("#")
+      for (let data of datas) {
+        if (data) {
+          onMessage(data);
+        }
+      }
+    }
+
+    (async () => {
+      let remote = new PouchDB('http://cuda:5984/feed');
+      let local = new PouchDB('feed');
+      local.sync(remote, {
+        live: true
+      }).on('change', function (change) {
+        onSignal(change.change.docs[0].data);
+      }).on('error', function (err) {
+        console.error(err);
+      });
+    })()
+  </script>
+</body>
+
+</html>
