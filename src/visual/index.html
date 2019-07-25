@@ -3,13 +3,61 @@
 <head>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pouchdb/7.1.1/pouchdb.js">
   </script>
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/chartist.js/latest/chartist.min.css">
+  <script src="//cdn.jsdelivr.net/chartist.js/latest/chartist.min.js"></script>
 </head>
+<style>
+  #canvas {
+    border: 1px solid black;
+  }
+</style>
 
 <body>
+  <canvas id="canvas" width="5000" height="1080"></canvas>
+  <div class="ct-chart ct-perfect-fourth"></div>
   <script>
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    const AMPLI = 5
+
+    const getPourcent = (minutes) => {
+      const res = [];
+      min = Infinity;
+      max = 0;
+      for (let minute of minutes) {
+        res.push((100 - (minute / minutes[0] * 100)) * AMPLI);
+      }
+      return res;
+    }
+
+    const printSituation = (data) => {
+      const opens = getPourcent(data.split(" ").splice(1));
+      console.log(opens);
+      ctx.beginPath();
+      ctx.moveTo(0, 500);
+      let i = -1;
+      for (let open of opens) {
+        i++;
+        ctx.lineTo(i, 500 + open);
+        ctx.stroke();
+      }
+
+    }
+
+    const clear = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      console.clear();
+    }
 
     const onMessage = (message) => {
-      console.log(message);
+      const actions = {
+        SIT: printSituation,
+        CLS: clear
+      }
+      if (actions[message[0] + message[1] + message[2]]) {
+        actions[message[0] + message[1] + message[2]](message);
+      }
     }
 
     const onSignal = (signal) => {
@@ -27,9 +75,13 @@
       local.sync(remote, {
         live: true
       }).on('change', function (change) {
-        onSignal(change.change.docs[0].data);
+        try {
+          onSignal(change.change.docs[0].data);
+        } catch (error) {
+          console.error(error);
+        }
       }).on('error', function (err) {
-        console.error(err);
+        console.error("--->", err);
       });
     })()
   </script>
