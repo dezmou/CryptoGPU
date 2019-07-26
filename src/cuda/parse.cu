@@ -4,10 +4,15 @@
 #include <unistd.h>
 
 #define SIT_SIZE 1000
+
 #define NBR_COIN 162
-#define NBR_MINUTES 881003
-#define AMOUNT_TEST 500000
 #define NBR_BLOCK 128
+
+// #define NBR_COIN 1
+// #define NBR_BLOCK 1
+
+#define NBR_MINUTES 881003
+#define AMOUNT_TEST 1000
 
 typedef struct {
     double open;
@@ -24,26 +29,24 @@ typedef struct {
 
 typedef struct {
     Minute **minutes;
-    int endIndex;
-
-} Situation;
-
-typedef struct {
-    Minute **minutes;
 } Env;
 
 Env env;
 
-__global__ void test(Minute **minutes) {
-    // int coinId = threadIdx.x;
-    // int minuteId = blockDim.x;
+__global__ void bake(int cursor, Minute **minutes, int *scores) {
+    int coinId = threadIdx.x;
+    int minuteId = blockIdx.x;
 
-    // printf("")
+    // for (int i=0; i < SIT_SIZE; i++){
+    //     printf("%lf\n", minutes[minuteId + i]->data[3].open);
+    // }
 
     // for (int i = 0; i < AMOUNT_TEST; i++) {
     //     printf("%lf - %lf\n", minutes[i]->data[3].open,
     //            minutes[i]->data[3].volume);
     // }
+
+    scores[ NBR_COIN * minuteId + coinId] = 69;
 }
 
 /**
@@ -52,7 +55,7 @@ __global__ void test(Minute **minutes) {
 Minute **loadHistory(int start, int amount) {
     int fd = open("../data/bin/full", O_RDONLY);
     Minute **minutes;
-    cudaMallocManaged(&minutes, sizeof(void **) * amount);
+    cudaMallocManaged(&minutes, sizeof(void *) * amount);
     int i = -1;
     while (1) {
         i++;
@@ -65,38 +68,50 @@ Minute **loadHistory(int start, int amount) {
 /**
  * Compare Given situation with all history
  */
-void bakeSituation() {}
+int *bakeSituation(int cursor) {
+    int *scores;
+    cudaMallocManaged(&scores, sizeof(int) * NBR_BLOCK * NBR_COIN);
+    // int nbrIteration = NBR_MINUTES / NBR_BLOCK;
+    bake<<<NBR_BLOCK, NBR_COIN>>>(cursor, env.minutes, scores);
+    cudaDeviceSynchronize();
+    return scores;
+}
 
 /**
  * Export situation to external program
  */
-void printSituation(Situation *sit) {
-    int index = sit->endIndex - SIT_SIZE;
+void printSituation(int cursor) {
     dprintf(1, "#SIT");
     for (int i = 0; i < SIT_SIZE; i++) {
-        dprintf(1, " %lf", sit->minutes[index + i * 10]->data[3].open);
+        dprintf(1, " %lf", env.minutes[cursor + i]->data[3].open);
     }
-    dprintf(1,"\n");
+    dprintf(1, "\n");
 }
 
-void clear(){
-    dprintf(1, "#CLS\n");
-}
+/**
+ * Clear visual field
+ */
+void clear() { dprintf(1, "#CLS\n"); }
 
 int main() {
-    clear();
+    // clear();
     env.minutes = loadHistory(0, AMOUNT_TEST);
-    dprintf(2,"ready");
-    Situation sit;
-    sit.minutes = env.minutes;
-    for (int i=0 ; i < 400; i++){
-        sit.endIndex = 2000 + (i * 400);
-        printSituation(&sit);
-        getchar();
-        clear();
+    dprintf(2, "ready\n");
+    int cursor = 0;
+    int *scores = bakeSituation(cursor);
+
+    for (int i = 0; i < NBR_BLOCK * NBR_COIN; i++) {
+        dprintf(2, "%d ", scores[i]);
     }
-    // int nbrIteration = NBR_MINUTES / NBR_BLOCK;
-    // test<<<NBR_BLOCK, NBR_COIN>>>(env.minutes);
-    // cudaDeviceSynchronize();
+    dprintf(2,"\n");
+
+
+    // for (int i = 0; i < 400; i++) {
+    //     clear();
+    //     printSituation(cursor);
+    //     cursor += 5000;
+    //     getchar();
+    // }
+
     return 0;
 }
