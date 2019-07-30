@@ -122,6 +122,7 @@ Minute **SituationToPourcent(int cursor) {
  * Export situation to external program
  */
 void printSituation(int cursor, int coinId) {
+    dprintf(2, "sit : %lf coinId : %d\n", env.minutes[cursor]->time, coinId);
     dprintf(1, "#SIT");
     for (int i = 0; i < SIT_SIZE; i++) {
         dprintf(1, " %lf", env.minutes[i + cursor]->data[coinId].open);
@@ -162,10 +163,14 @@ void bakeSituation(int cursor, int coinId) {
                         env.highScores[highIndex].score = scores[i];
                         env.highScores[highIndex].minuteId = minuteId + cursor;
                         env.highScores[highIndex].coinId = coinId;
-                        dprintf(2,"score : %d\n", scores[i]);
+                        found = 1;
+                        i += NBR_COIN_CUDA * 50;
                         break;
                     }
                 }
+                // if (found) {
+                //     break;
+                // }
                 // if (scores[i] < 47) {
                 //     dprintf(2, "score : %d coinId : %d\n time :", scores[i],
                 //             coinId);
@@ -177,16 +182,19 @@ void bakeSituation(int cursor, int coinId) {
         }
         cursor += NBR_BLOCK;
         if (cursor % 100 == 0) {
-            // printf("%d %d %d %d\n", env.highScores[0].score,
-            //        env.highScores[1].score, env.highScores[2].score,
-            //        env.highScores[3].score);
+            printf("%d %d %d %d\n", env.highScores[0].score,
+                   env.highScores[1].score, env.highScores[2].score,
+                   env.highScores[3].score);
             dprintf(2, "cursor : %d\n", cursor);
             // getchar();
         }
         // getchar();
     }
+    dprintf(2, "Done\n");
+    getchar();
     for (int highIndex = 0; highIndex < NBR_HIGH_SCORE; highIndex++) {
-        printSituation(env.highScores[highIndex].minuteId, env.highScores[highIndex].coinId);
+        printSituation(env.highScores[highIndex].minuteId,
+                       env.highScores[highIndex].coinId);
         getchar();
     }
 }
