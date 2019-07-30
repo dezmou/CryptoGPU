@@ -16,10 +16,12 @@
   <canvas id="canvas" width="5000" height="1080"></canvas>
   <div class="ct-chart ct-perfect-fourth"></div>
   <script>
+    
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
 
-    const AMPLI = 5
+    const AMPLI = 60
+    const AMPLIX = 5
 
     const getPourcent = (minutes) => {
       const res = [];
@@ -34,12 +36,13 @@
     const printSituation = (data) => {
       const opens = getPourcent(data.split(" ").splice(1));
       console.log(opens);
+      ctx.strokeStyle = '#'+(0x1000000+(Math.random())*0xffffff).toString(16).substr(1,6);
       ctx.beginPath();
       ctx.moveTo(0, 500);
       let i = -1;
       for (let open of opens) {
         i++;
-        ctx.lineTo(i, 500 + open);
+        ctx.lineTo(i*2, 500 + open);
         ctx.stroke();
       }
     }
@@ -69,13 +72,16 @@
     }
 
     (async () => {
-      let remote = new PouchDB('http://cuda:5984/feed');
-      let local = new PouchDB('feed');
-      local.sync(remote, {
-        live: true
+      let remote = new PouchDB(`http://${window.location.hostname}:5984/feed`);
+      // let local = new PouchDB('feed');
+      remote.changes({
+        since : 'now',
+        live: true,
+        include_docs: true
       }).on('change', function (change) {
+        console.log(change);
         try {
-          onSignal(change.change.docs[0].data);
+          onSignal(change.doc.data);
         } catch (error) {
           console.error(error);
         }

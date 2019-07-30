@@ -3,13 +3,15 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define SIT_SIZE 400
+#define SIT_SIZE 200
 
 #define NBR_COIN 162
-// #define NBR_BLOCK 128
 
 #define NBR_COIN_CUDA 162
-#define NBR_BLOCK 128
+#define NBR_BLOCK 1024
+
+// #define NBR_COIN_CUDA 4
+// #define NBR_BLOCK 1
 
 // #define NBR_COIN 1
 // #define NBR_BLOCK 1
@@ -54,11 +56,9 @@ __global__ void bake(Minute **source, int sourceCoinId, int cursor,
                           minutes[cursor + minuteId]->data[coinId].open * 100;
         score += fabs((source[i]->data[sourceCoinId].open) - (pourcent));
     }
-
     // printf("score : %12lf coinId: %4d minuteId : %3d test: %lf \n", score,
     //        coinId, minuteId + cursor,
     //        minutes[minuteId + cursor]->data[coinId].open);
-
     scores[NBR_COIN_CUDA * minuteId + coinId] = score;
 }
 
@@ -141,9 +141,12 @@ int *bakeSituation(int cursor, int coinId) {
                 //         %lf\n", scores[i], coinId, minuteId + cursor,
                 //         env.minutes[minuteId + cursor]->data[coinId].open);
 
-                if (scores[i] < 1300) {
+                if (scores[i] < 47) {
+                    dprintf(2, "score : %d coinId : %d\n time :", scores[i],
+                            coinId);
                     printSituation(minuteId + cursor, coinId);
-                    getchar();
+                    // getchar();
+                    break;
                 }
             }
         }
@@ -170,10 +173,11 @@ int main() {
     clear();
     env.minutes = loadHistory(0, AMOUNT_TEST);
     dprintf(2, "ready\n");
-    int cursor = 0;
-    printSituation(cursor, 3);
     getchar();
-    int *scores = bakeSituation(cursor, 3);
+    int cursor = 405000;
+    printSituation(cursor, 25);
+    getchar();
+    int *scores = bakeSituation(cursor, 25);
 
     return 0;
 }
