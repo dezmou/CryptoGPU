@@ -3,14 +3,14 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define SIT_SIZE 200
+#define SIT_SIZE 400
 
 #define NBR_COIN 162
 
 #define NBR_COIN_CUDA 162
 #define NBR_BLOCK 1024
 
-#define NBR_HIGH_SCORE 20
+#define NBR_HIGH_SCORE 50
 
 // #define NBR_COIN_CUDA 4
 // #define NBR_BLOCK 1
@@ -56,6 +56,10 @@ __global__ void bake(Minute **source, int sourceCoinId, int cursor,
     int coinId = threadIdx.x;
     int minuteId = blockIdx.x;
     double score = 0;
+    if (minutes[cursor + minuteId]->data[coinId].open < 0.000220) {
+        scores[NBR_COIN_CUDA * minuteId + coinId] = -1;
+        return;
+    }
     for (int i = 0; i < SIT_SIZE; i++) {
         if (minutes[cursor + minuteId + i]->data[coinId].open == -1) {
             scores[NBR_COIN_CUDA * minuteId + coinId] = -1;
@@ -125,6 +129,7 @@ void printSituation(int cursor, int coinId) {
     dprintf(2, "sit : %lf coinId : %d\n", env.minutes[cursor]->time, coinId);
     dprintf(1, "#SIT");
     for (int i = 0; i < SIT_SIZE; i++) {
+        dprintf(2, " %lf", env.minutes[i + cursor]->data[coinId].open);
         dprintf(1, " %lf", env.minutes[i + cursor]->data[coinId].open);
     }
     dprintf(1, "\n");
@@ -136,7 +141,8 @@ void printSituation(int cursor, int coinId) {
 void bakeSituation(int cursor, int coinId) {
     int *scores;
     Minute **pourcent = SituationToPourcent(cursor);
-    cursor += SIT_SIZE;  // avoiding compare source situation
+    // cursor += SIT_SIZE;  // avoiding compare source situation
+    cursor = 0;
     cudaMallocManaged(&scores, sizeof(int) * NBR_BLOCK * NBR_COIN);
     for (int hi = 0; hi < NBR_HIGH_SCORE; hi++) {
         env.highScores[hi].score = 99999999;
@@ -163,7 +169,6 @@ void bakeSituation(int cursor, int coinId) {
                         env.highScores[highIndex].score = scores[i];
                         env.highScores[highIndex].minuteId = minuteId + cursor;
                         env.highScores[highIndex].coinId = coinId;
-                        found = 1;
                         i += NBR_COIN_CUDA * 50;
                         break;
                     }
@@ -214,7 +219,7 @@ int main() {
     env.minutes = loadHistory(0, AMOUNT_TEST);
     dprintf(2, "ready\n");
     getchar();
-    int cursor = 405000;
+    int cursor = 406000;
     printSituation(cursor, 25);
     getchar();
     bakeSituation(cursor, 25);
