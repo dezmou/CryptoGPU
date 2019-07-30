@@ -10,7 +10,7 @@
 #define NBR_COIN_CUDA 162
 #define NBR_BLOCK 1024
 
-#define NBR_HIGH_SCORE 50
+#define NBR_HIGH_SCORE 20
 
 // #define NBR_COIN_CUDA 4
 // #define NBR_BLOCK 1
@@ -43,9 +43,19 @@ typedef struct {
 typedef struct {
     Minute **minutes;
     Score highScores[NBR_HIGH_SCORE];
+
+    /**Cuda memory */
+    Minute **srcPourcent;
+    int *scores;
 } Env;
 
 Env env;
+
+/**
+ * Clear visual field
+ */
+void clear() { dprintf(1, "#CLS\n"); }
+
 
 /**
  * Launch the great machine comparator
@@ -67,7 +77,8 @@ __global__ void bake(Minute **source, int sourceCoinId, int cursor,
         }
         double pourcent = minutes[cursor + minuteId + i]->data[coinId].open /
                           minutes[cursor + minuteId]->data[coinId].open * 100;
-        score += fabs((source[i]->data[sourceCoinId].open) - (pourcent));
+        score +=
+            fabs(fabs(source[i]->data[sourceCoinId].open) - fabs(pourcent));
     }
 
     // printf("score : %12lf coinId: %4d minuteId : %3d test: %lf \n", score,
@@ -96,30 +107,27 @@ Minute **loadHistory(int start, int amount) {
  * Transform every value of a situation to a pourcentage from first value
  */
 Minute **SituationToPourcent(int cursor) {
-    Minute **result;
-    cudaMallocManaged(&result, sizeof(void *) * SIT_SIZE);
     for (int i = 0; i < SIT_SIZE; i++) {
-        cudaMallocManaged(&result[i], sizeof(Minute));
-        result[i]->time = env.minutes[cursor + i]->time;
+        env.srcPourcent[i]->time = env.minutes[cursor + i]->time;
         for (int coinIndex = 0; coinIndex < NBR_COIN_CUDA; coinIndex++) {
-            result[i]->data[coinIndex].close =
+            env.srcPourcent[i]->data[coinIndex].close =
                 env.minutes[cursor + i]->data[coinIndex].close /
                 env.minutes[cursor]->data[coinIndex].close * 100;
-            result[i]->data[coinIndex].high =
+            env.srcPourcent[i]->data[coinIndex].high =
                 env.minutes[cursor + i]->data[coinIndex].high /
                 env.minutes[cursor]->data[coinIndex].high * 100;
-            result[i]->data[coinIndex].low =
+            env.srcPourcent[i]->data[coinIndex].low =
                 env.minutes[cursor + i]->data[coinIndex].low /
                 env.minutes[cursor]->data[coinIndex].low * 100;
-            result[i]->data[coinIndex].open =
+            env.srcPourcent[i]->data[coinIndex].open =
                 env.minutes[cursor + i]->data[coinIndex].open /
                 env.minutes[cursor]->data[coinIndex].open * 100;
-            result[i]->data[coinIndex].volume =
+            env.srcPourcent[i]->data[coinIndex].volume =
                 env.minutes[cursor + i]->data[coinIndex].volume /
                 env.minutes[cursor + i]->data[coinIndex].volume * 100;
         }
     }
-    return result;
+    return env.srcPourcent;
 }
 
 /**
@@ -139,20 +147,28 @@ void printSituation(int cursor, int coinId) {
  * Compare Given situation with all history
  */
 void bakeSituation(int cursor, int coinId) {
-    int *scores;
+    // score
+    int *scores = env.scores;
+    dprintf(2, "11\n");
     Minute **pourcent = SituationToPourcent(cursor);
     // cursor += SIT_SIZE;  // avoiding compare source situation
     cursor = 0;
-    cudaMallocManaged(&scores, sizeof(int) * NBR_BLOCK * NBR_COIN);
+    dprintf(2, "1\n");
+    dprintf(2, "2\n");
     for (int hi = 0; hi < NBR_HIGH_SCORE; hi++) {
         env.highScores[hi].score = 99999999;
         env.highScores[hi].minuteId = 0;
         env.highScores[hi].coinId = 0;
     }
-    for (int bakeIndex = 0; cursor < 881003; bakeIndex++) {
+    for (int bakeIndex = 0; cursor < 870000; bakeIndex++) {
         bake<<<NBR_BLOCK, NBR_COIN_CUDA>>>(pourcent, coinId, cursor,
                                            env.minutes, scores);
         cudaDeviceSynchronize();
+        cudaError_t error = cudaGetLastError();
+        if (error != cudaSuccess) {
+            printf("CUDA error: %s\n", cudaGetErrorString(error));
+            exit(-1);
+        }
         for (int i = 0; i < NBR_BLOCK * NBR_COIN_CUDA; i++) {
             if (scores[i] != -1) {
                 int minuteId = i / NBR_COIN;
@@ -187,16 +203,14 @@ void bakeSituation(int cursor, int coinId) {
         }
         cursor += NBR_BLOCK;
         if (cursor % 100 == 0) {
-            printf("%d %d %d %d\n", env.highScores[0].score,
-                   env.highScores[1].score, env.highScores[2].score,
-                   env.highScores[3].score);
             dprintf(2, "cursor : %d\n", cursor);
             // getchar();
         }
         // getchar();
     }
     dprintf(2, "Done\n");
-    getchar();
+    // getchar();
+    clear();
     for (int highIndex = 0; highIndex < NBR_HIGH_SCORE; highIndex++) {
         printSituation(env.highScores[highIndex].minuteId,
                        env.highScores[highIndex].coinId);
@@ -204,25 +218,31 @@ void bakeSituation(int cursor, int coinId) {
     }
 }
 
-/**
- * Clear visual field
- */
-void clear() { dprintf(1, "#CLS\n"); }
 
 /**
  * do something with the score of a minute
  */
 void onScore() {}
 
-int main() {
-    clear();
-    env.minutes = loadHistory(0, AMOUNT_TEST);
-    dprintf(2, "ready\n");
-    getchar();
-    int cursor = 406000;
-    printSituation(cursor, 25);
-    getchar();
-    bakeSituation(cursor, 25);
+void initCuda() {
+    cudaMallocManaged(&env.srcPourcent, sizeof(void *) * SIT_SIZE);
+    for (int i = 0; i < SIT_SIZE; i++) {
+        cudaMallocManaged(&env.srcPourcent[i], sizeof(Minute));
+    }
+    cudaMallocManaged(&env.scores, sizeof(int) * NBR_BLOCK * NBR_COIN);
+}
 
+int main() {
+    env.minutes = loadHistory(0, AMOUNT_TEST);
+    initCuda();
+    int cur = 0;
+    while (1) {
+        // dprintf(2, "ready\n");
+        int cursor = 407000 + cur;
+        printSituation(cursor, 25);
+        dprintf(2, "READY\n");
+        bakeSituation(cursor, 25);
+        cur += SIT_SIZE / 2;
+    }
     return 0;
 }
