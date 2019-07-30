@@ -10,6 +10,8 @@
 #define NBR_COIN_CUDA 162
 #define NBR_BLOCK 1024
 
+#define NBR_HIGH_SCORE 20
+
 // #define NBR_COIN_CUDA 4
 // #define NBR_BLOCK 1
 
@@ -33,7 +35,14 @@ typedef struct {
 } Minute;
 
 typedef struct {
+    int score;
+    int minuteId;
+    int coinId;
+} Score;
+
+typedef struct {
     Minute **minutes;
+    Score highScores[NBR_HIGH_SCORE];
 } Env;
 
 Env env;
@@ -56,6 +65,7 @@ __global__ void bake(Minute **source, int sourceCoinId, int cursor,
                           minutes[cursor + minuteId]->data[coinId].open * 100;
         score += fabs((source[i]->data[sourceCoinId].open) - (pourcent));
     }
+
     // printf("score : %12lf coinId: %4d minuteId : %3d test: %lf \n", score,
     //        coinId, minuteId + cursor,
     //        minutes[minuteId + cursor]->data[coinId].open);
@@ -122,11 +132,16 @@ void printSituation(int cursor, int coinId) {
 /**
  * Compare Given situation with all history
  */
-int *bakeSituation(int cursor, int coinId) {
+void bakeSituation(int cursor, int coinId) {
     int *scores;
     Minute **pourcent = SituationToPourcent(cursor);
     cursor += SIT_SIZE;  // avoiding compare source situation
     cudaMallocManaged(&scores, sizeof(int) * NBR_BLOCK * NBR_COIN);
+    for (int hi = 0; hi < NBR_HIGH_SCORE; hi++) {
+        env.highScores[hi].score = 99999999;
+        env.highScores[hi].minuteId = 0;
+        env.highScores[hi].coinId = 0;
+    }
     for (int bakeIndex = 0; cursor < 881003; bakeIndex++) {
         bake<<<NBR_BLOCK, NBR_COIN_CUDA>>>(pourcent, coinId, cursor,
                                            env.minutes, scores);
@@ -141,22 +156,39 @@ int *bakeSituation(int cursor, int coinId) {
                 //         %lf\n", scores[i], coinId, minuteId + cursor,
                 //         env.minutes[minuteId + cursor]->data[coinId].open);
 
-                if (scores[i] < 47) {
-                    dprintf(2, "score : %d coinId : %d\n time :", scores[i],
-                            coinId);
-                    printSituation(minuteId + cursor, coinId);
-                    // getchar();
-                    break;
+                for (int highIndex = 0; highIndex < NBR_HIGH_SCORE;
+                     highIndex++) {
+                    if (scores[i] < env.highScores[highIndex].score) {
+                        env.highScores[highIndex].score = scores[i];
+                        env.highScores[highIndex].minuteId = minuteId + cursor;
+                        env.highScores[highIndex].coinId = coinId;
+                        dprintf(2,"score : %d\n", scores[i]);
+                        break;
+                    }
                 }
+                // if (scores[i] < 47) {
+                //     dprintf(2, "score : %d coinId : %d\n time :", scores[i],
+                //             coinId);
+                //     printSituation(minuteId + cursor, coinId);
+                //     // getchar();
+                //     break;
+                // }
             }
         }
         cursor += NBR_BLOCK;
         if (cursor % 100 == 0) {
+            // printf("%d %d %d %d\n", env.highScores[0].score,
+            //        env.highScores[1].score, env.highScores[2].score,
+            //        env.highScores[3].score);
             dprintf(2, "cursor : %d\n", cursor);
+            // getchar();
         }
         // getchar();
     }
-    return scores;
+    for (int highIndex = 0; highIndex < NBR_HIGH_SCORE; highIndex++) {
+        printSituation(env.highScores[highIndex].minuteId, env.highScores[highIndex].coinId);
+        getchar();
+    }
 }
 
 /**
@@ -177,7 +209,7 @@ int main() {
     int cursor = 405000;
     printSituation(cursor, 25);
     getchar();
-    int *scores = bakeSituation(cursor, 25);
+    bakeSituation(cursor, 25);
 
     return 0;
 }
