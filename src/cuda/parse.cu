@@ -3,21 +3,21 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#define CBLACK "\33[30m"
+#define CRED "\33[31m"
+#define CGREEN "\33[32m"
+#define CWHITE "\33[37m"
+
 #define SIT_SIZE 130
-
 #define NBR_COIN 162
-
 #define NBR_COIN_CUDA 162
 #define NBR_BLOCK 1024
-
-#define NBR_HIGH_SCORE 50
-
-// #define NBR_COIN_CUDA 4
-// #define NBR_BLOCK 1
-
-// #define NBR_COIN 1
-// #define NBR_BLOCK 1
-
+#define NBR_HIGH_SCORE 10
+#define MIN_PRICE 0.000220
+#define TIME_GUESS 10
+#define COIN_TEST 98
+#define AMOUNT_BET 100
+#define MIN_POURCENT_GUESS 0.001
 #define NBR_MINUTES 881003
 #define AMOUNT_TEST 881003
 
@@ -50,6 +50,11 @@ typedef struct {
     int *scores;
 } Env;
 
+typedef struct {
+    int cursor;
+    int coinId;
+} Situation;
+
 Env env;
 
 /**
@@ -66,7 +71,7 @@ __global__ void bake(Minute **source, int sourceCoinId, int cursor,
     int coinId = threadIdx.x;
     int minuteId = blockIdx.x;
     double score = 0;
-    if (minutes[cursor + minuteId]->data[coinId].open < 0.000220) {
+    if (minutes[cursor + minuteId]->data[coinId].open < MIN_PRICE) {
         scores[NBR_COIN_CUDA * minuteId + coinId] = -1;
         return;
     }
@@ -85,6 +90,14 @@ __global__ void bake(Minute **source, int sourceCoinId, int cursor,
     //        coinId, minuteId + cursor,
     //        minutes[minuteId + cursor]->data[coinId].open);
     scores[NBR_COIN_CUDA * minuteId + coinId] = score;
+}
+
+/**
+ * Generate a random number
+ */
+int random_number(int min_num, int max_num) {
+    int result = (rand() % (max_num - min_num)) + min_num;
+    return result;
 }
 
 /**
@@ -146,22 +159,20 @@ void printSituation(int cursor, int coinId) {
 /**
  * Compare Given situation with all history
  */
-void bakeSituation(int cursor, int coinId) {
+void bakeSituation(int cursor, int baseCoinId) {
     // score
     int *scores = env.scores;
-    dprintf(2, "11\n");
+    int baseCursor = cursor;
     Minute **pourcent = SituationToPourcent(cursor);
     // cursor += SIT_SIZE;  // avoiding compare source situation
     cursor = 0;
-    dprintf(2, "1\n");
-    dprintf(2, "2\n");
     for (int hi = 0; hi < NBR_HIGH_SCORE; hi++) {
         env.highScores[hi].score = 99999999;
         env.highScores[hi].minuteId = 0;
         env.highScores[hi].coinId = 0;
     }
     for (int bakeIndex = 0; cursor < 870000; bakeIndex++) {
-        bake<<<NBR_BLOCK, NBR_COIN_CUDA>>>(pourcent, coinId, cursor,
+        bake<<<NBR_BLOCK, NBR_COIN_CUDA>>>(pourcent, baseCoinId, cursor,
                                            env.minutes, scores);
         cudaDeviceSynchronize();
         cudaError_t error = cudaGetLastError();
@@ -173,6 +184,9 @@ void bakeSituation(int cursor, int coinId) {
             if (scores[i] != -1) {
                 int minuteId = i / NBR_COIN;
                 int coinId = i % NBR_COIN;
+                if (abs((minuteId + cursor) - baseCursor) < (SIT_SIZE * 5)) {
+                    continue;
+                }
 
                 // dprintf(2,
                 //         "score : %12d coinId: %4d minuteid : %3d test:
@@ -202,31 +216,54 @@ void bakeSituation(int cursor, int coinId) {
             }
         }
         cursor += NBR_BLOCK;
-        if (cursor % 100 == 0) {
-            // dprintf(2, "cursor : %d\n", cursor);
-            // getchar();
-        }
+        // if (cursor % 100 == 0) {
+        //     // dprintf(2, "cursor : %d\n", cursor);
+        //     // getchar();
+        // }
         // getchar();
     }
-    dprintf(2, "Done\n");
+    // dprintf(2, "Done\n");
     // getchar();
 
     // clear();
-    for (int highIndex = 0; highIndex < NBR_HIGH_SCORE-1; highIndex++) {
-        getchar();
-        printSituation(env.highScores[highIndex].minuteId,
-                       env.highScores[highIndex].coinId);
-    }
+    // for (int highIndex = 0; highIndex < NBR_HIGH_SCORE - 1; highIndex++) {
+    //     getchar();
+    //     printSituation(env.highScores[highIndex].minuteId,
+    //                    env.highScores[highIndex].coinId);
+    // }
 }
 
-// void makeGuess() {
-//     for (int i = 0; i < SIT_SIZE; i++) {
-//         for (int highIndex = 0; highIndex < NBR_HIGH_SCORE; highIndex++) {
-//             env.highScores[highIndex].minuteId + SIT_SIZE;
-//             env.highScores[highIndex].coinId;
-//         }
-//     }
-// }
+/**
+ * Return the guessed percentage of change from situation to TIME_GUESS
+ */
+double makeNextGuess() {
+    double pred = 0;
+    for (int highIndex = 0; highIndex < NBR_HIGH_SCORE; highIndex++) {
+        // env.highScores[highIndex].minuteId + SIT_SIZE;
+        // env.highScores[highIndex].coinId;
+        double start =
+            env.minutes[env.highScores[highIndex].minuteId + SIT_SIZE]
+                ->data[env.highScores[highIndex].coinId]
+                .open;
+        double end = env.minutes[env.highScores[highIndex].minuteId + SIT_SIZE +
+                                 TIME_GUESS]
+                         ->data[env.highScores[highIndex].coinId]
+                         .open;
+        pred += 100 - (start / end * 100);
+    }
+    pred = pred / NBR_HIGH_SCORE;
+    return pred;
+}
+
+/**
+ * Get real next pourcent of given situation
+ */
+double getRealNext(int minuteId, int coinId) {
+    double start = env.minutes[minuteId + SIT_SIZE]->data[coinId].open;
+    double end =
+        env.minutes[minuteId + SIT_SIZE + TIME_GUESS]->data[coinId].open;
+    return 100 - (start / end * 100);
+}
 
 // /**
 //  * do something with the score of a minute
@@ -242,20 +279,65 @@ void initMem() {
     env.guessed = (double *)malloc(sizeof(double) * SIT_SIZE);
 }
 
+Situation getRandomSituation() {
+    Situation res;
+    int last = 0;
+    while (1) {
+        res.cursor = random_number(200000, NBR_MINUTES - 1000);
+        if (res.cursor == last) {
+            printf("AH NON\n");
+        }
+        last = res.cursor;
+        res.coinId = random_number(0, NBR_COIN_CUDA);
+        if (env.minutes[res.cursor]->data[res.coinId].open != -1 &&
+            env.minutes[res.cursor]->data[res.coinId].open > MIN_PRICE) {
+            return res;
+        }
+        usleep(1000);
+    }
+}
+
 int main() {
+    srand(time(NULL));
     env.minutes = loadHistory(0, AMOUNT_TEST);
     initMem();
     int cur = 0;
+    double bank = 1000;
     while (1) {
         // dprintf(2, "ready\n");
-        int cursor = 457100 + cur;
-        clear();
-        printSituation(cursor, 98);
-        dprintf(2, "READY\n");
-        bakeSituation(cursor, 98);
-        exit(0);
-        // makeGuess();
-        cur += SIT_SIZE / 2;
+        // int cursor = 397100 + cur;
+        // int cursor = random_number(397100, 500000);
+        // clear();
+        // printSituation(cursor, COIN_TEST);
+        // dprintf(2, "READY\n");
+        Situation sit = getRandomSituation();
+        bakeSituation(sit.cursor, sit.coinId);
+        double pred = makeNextGuess();
+        double real = getRealNext(sit.cursor, sit.coinId);
+        if (abs(real) > 5) {
+            continue;
+        }
+        printf(
+            "Time : %d | Cursor : %8d | CoinId : %4d | Pred : %10lf | Real : "
+            "%10lf | BANK : %12lf |",
+            (int)env.minutes[sit.cursor + SIT_SIZE]->time, sit.cursor,
+            sit.coinId, pred, real, bank);
+        if (abs(pred) > MIN_POURCENT_GUESS) {
+            if (pred * real > 0) {
+                bank += abs(real) * AMOUNT_BET;
+                // printf("%sWON  %s ", CGREEN, CWHITE);
+                bank += -(AMOUNT_BET * 0.002);
+            } else {
+                // printf("%sLOST %s ", CRED, CWHITE);
+                bank -= abs(real) * AMOUNT_BET;
+                bank += -(AMOUNT_BET * 0.002);
+            }
+        }
+        printf("\n");
+        fflush(stdout);
+        // write(1,"\n", 1);
+        // exit(0);
+        // cur += SIT_SIZE / 2;
     }
     return 0;
 }
