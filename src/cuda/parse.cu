@@ -3,14 +3,14 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#define SIT_SIZE 400
+#define SIT_SIZE 130
 
 #define NBR_COIN 162
 
 #define NBR_COIN_CUDA 162
 #define NBR_BLOCK 1024
 
-#define NBR_HIGH_SCORE 20
+#define NBR_HIGH_SCORE 50
 
 // #define NBR_COIN_CUDA 4
 // #define NBR_BLOCK 1
@@ -41,10 +41,11 @@ typedef struct {
 } Score;
 
 typedef struct {
-    Minute **minutes;
     Score highScores[NBR_HIGH_SCORE];
+    double *guessed;
 
     /**Cuda memory */
+    Minute **minutes;  // all history
     Minute **srcPourcent;
     int *scores;
 } Env;
@@ -55,7 +56,6 @@ Env env;
  * Clear visual field
  */
 void clear() { dprintf(1, "#CLS\n"); }
-
 
 /**
  * Launch the great machine comparator
@@ -136,7 +136,7 @@ Minute **SituationToPourcent(int cursor) {
 void printSituation(int cursor, int coinId) {
     dprintf(2, "sit : %lf coinId : %d\n", env.minutes[cursor]->time, coinId);
     dprintf(1, "#SIT");
-    for (int i = 0; i < SIT_SIZE; i++) {
+    for (int i = 0; i < SIT_SIZE * 2; i++) {
         dprintf(2, " %lf", env.minutes[i + cursor]->data[coinId].open);
         dprintf(1, " %lf", env.minutes[i + cursor]->data[coinId].open);
     }
@@ -203,45 +203,58 @@ void bakeSituation(int cursor, int coinId) {
         }
         cursor += NBR_BLOCK;
         if (cursor % 100 == 0) {
-            dprintf(2, "cursor : %d\n", cursor);
+            // dprintf(2, "cursor : %d\n", cursor);
             // getchar();
         }
         // getchar();
     }
     dprintf(2, "Done\n");
     // getchar();
-    clear();
-    for (int highIndex = 0; highIndex < NBR_HIGH_SCORE; highIndex++) {
+
+    // clear();
+    for (int highIndex = 0; highIndex < NBR_HIGH_SCORE-1; highIndex++) {
+        getchar();
         printSituation(env.highScores[highIndex].minuteId,
                        env.highScores[highIndex].coinId);
-        getchar();
     }
 }
 
+// void makeGuess() {
+//     for (int i = 0; i < SIT_SIZE; i++) {
+//         for (int highIndex = 0; highIndex < NBR_HIGH_SCORE; highIndex++) {
+//             env.highScores[highIndex].minuteId + SIT_SIZE;
+//             env.highScores[highIndex].coinId;
+//         }
+//     }
+// }
 
-/**
- * do something with the score of a minute
- */
-void onScore() {}
+// /**
+//  * do something with the score of a minute
+//  */
+// void onScore() {}
 
-void initCuda() {
+void initMem() {
     cudaMallocManaged(&env.srcPourcent, sizeof(void *) * SIT_SIZE);
     for (int i = 0; i < SIT_SIZE; i++) {
         cudaMallocManaged(&env.srcPourcent[i], sizeof(Minute));
     }
     cudaMallocManaged(&env.scores, sizeof(int) * NBR_BLOCK * NBR_COIN);
+    env.guessed = (double *)malloc(sizeof(double) * SIT_SIZE);
 }
 
 int main() {
     env.minutes = loadHistory(0, AMOUNT_TEST);
-    initCuda();
+    initMem();
     int cur = 0;
     while (1) {
         // dprintf(2, "ready\n");
-        int cursor = 407000 + cur;
-        printSituation(cursor, 25);
+        int cursor = 457100 + cur;
+        clear();
+        printSituation(cursor, 98);
         dprintf(2, "READY\n");
-        bakeSituation(cursor, 25);
+        bakeSituation(cursor, 98);
+        exit(0);
+        // makeGuess();
         cur += SIT_SIZE / 2;
     }
     return 0;

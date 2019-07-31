@@ -20,8 +20,8 @@
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
 
-    const AMPLI = 60
-    const AMPLIX = 5
+    const AMPLI = 200
+    const AMPLIX = 8
 
     const getPourcent = (minutes) => {
       const res = [];
@@ -42,9 +42,11 @@
       let i = -1;
       for (let open of opens) {
         i++;
-        ctx.lineTo(i*2, 500 + open);
+        ctx.lineTo(i*AMPLIX, 500 + open);
         ctx.stroke();
       }
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(opens.length * AMPLIX / 2, 0, 2, 1000);
     }
 
     const clear = () => {

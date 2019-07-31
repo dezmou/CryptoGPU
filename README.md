@@ -1,4 +1,6 @@
-Cryptocurrency trader-bot
-## [ \~> Visit First POC <\~](./poc_1) 
+# Naive approach to make a cryptocurrency bot
 
-## This project is about naively use CUDA to compare lot of cryptocurrency prices history and see what we can find here...
+## Given a chart, check all price history for other charts that look like our.
+
+![figure 1](example.gif)  
+
