@@ -8,13 +8,13 @@
 #define CGREEN "\33[32m"
 #define CWHITE "\33[37m"
 
-#define SIT_SIZE 130
+#define SIT_SIZE 500
 #define NBR_COIN 162
 #define NBR_COIN_CUDA 162
 #define NBR_BLOCK 1024
-#define NBR_HIGH_SCORE 10
-#define MIN_PRICE 0.000220
-#define TIME_GUESS 10
+#define NBR_HIGH_SCORE 50
+#define MIN_PRICE 0.000620
+#define TIME_GUESS 100
 #define COIN_TEST 98
 #define AMOUNT_BET 100
 #define MIN_POURCENT_GUESS 0.001
@@ -284,9 +284,6 @@ Situation getRandomSituation() {
     int last = 0;
     while (1) {
         res.cursor = random_number(200000, NBR_MINUTES - 1000);
-        if (res.cursor == last) {
-            printf("AH NON\n");
-        }
         last = res.cursor;
         res.coinId = random_number(0, NBR_COIN_CUDA);
         if (env.minutes[res.cursor]->data[res.coinId].open != -1 &&
@@ -295,6 +292,39 @@ Situation getRandomSituation() {
         }
         usleep(1000);
     }
+}
+
+void printInfos(Situation sit) {
+    printf("%d;%d(", sit.coinId, sit.cursor);
+    for (int i = 20; i < 220; i += 20) {
+        double start =
+            env.minutes[sit.cursor + SIT_SIZE]->data[sit.coinId].open;
+        double end =
+            env.minutes[sit.cursor + SIT_SIZE + i]->data[sit.coinId].open;
+        double pred = 100 - (start / end * 100);
+        printf("%lf;", pred);
+    }
+    printf(")-->");
+    for (int highIndex = 0; highIndex < NBR_HIGH_SCORE; highIndex++) {
+        // env.highScores[highIndex].minuteId + SIT_SIZE;
+        // env.highScores[highIndex].coinId;
+        printf("%d;%d(", env.highScores[highIndex].coinId,
+               env.highScores[highIndex].minuteId);
+        for (int i = 20; i < 220; i += 20) {
+            double start =
+                env.minutes[env.highScores[highIndex].minuteId + SIT_SIZE]
+                    ->data[env.highScores[highIndex].coinId]
+                    .open;
+            double end =
+                env.minutes[env.highScores[highIndex].minuteId + SIT_SIZE + i]
+                    ->data[env.highScores[highIndex].coinId]
+                    .open;
+            double pred = 100 - (start / end * 100);
+            printf("%lf;", pred);
+        }
+        printf(")|");
+    }
+    printf("\n");
 }
 
 int main() {
@@ -312,30 +342,33 @@ int main() {
         // dprintf(2, "READY\n");
         Situation sit = getRandomSituation();
         bakeSituation(sit.cursor, sit.coinId);
-        double pred = makeNextGuess();
-        double real = getRealNext(sit.cursor, sit.coinId);
-        if (abs(real) > 5) {
-            continue;
-        }
-        printf(
-            "Time : %d | Cursor : %8d | CoinId : %4d | Pred : %10lf | Real : "
-            "%10lf | BANK : %12lf |",
-            (int)env.minutes[sit.cursor + SIT_SIZE]->time, sit.cursor,
-            sit.coinId, pred, real, bank);
-        if (abs(pred) > MIN_POURCENT_GUESS) {
-            if (pred * real > 0) {
-                bank += abs(real) * AMOUNT_BET;
-                // printf("%sWON  %s ", CGREEN, CWHITE);
-                bank += -(AMOUNT_BET * 0.002);
-            } else {
-                // printf("%sLOST %s ", CRED, CWHITE);
-                bank -= abs(real) * AMOUNT_BET;
-                bank += -(AMOUNT_BET * 0.002);
-            }
-        }
-        printf("\n");
-        fflush(stdout);
-        // write(1,"\n", 1);
+        printInfos(sit);
+        // double pred = makeNextGuess();
+        // double real = getRealNext(sit.cursor, sit.coinId);
+
+        // if (abs(real) > 5) {
+        //     continue;
+        // }
+        // printf(
+        //     "Time : %d | Cursor : %8d | CoinId : %4d | Pred : %10lf | Real :
+        //     "
+        //     "%10lf | BANK : %12lf |",
+        //     (int)env.minutes[sit.cursor + SIT_SIZE]->time, sit.cursor,
+        //     sit.coinId, pred, real, bank);
+        // if (abs(pred) > MIN_POURCENT_GUESS) {
+        //     if (pred * real > 0) {
+        //         bank += abs(real) * AMOUNT_BET * 0.01;
+        //         printf("%sWON  %s ", CGREEN, CWHITE);
+        //         bank += -(AMOUNT_BET * 0.002);
+        //     } else {
+        //         printf("%sLOST %s ", CRED, CWHITE);
+        //         bank -= abs(real) * AMOUNT_BET * 0.01;
+        //         bank += -(AMOUNT_BET * 0.002);
+        //     }
+        // }
+        // printf("\n");
+        // fflush(stdout);
+
         // exit(0);
         // cur += SIT_SIZE / 2;
     }
