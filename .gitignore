@@ -4,3 +4,8 @@ data/
 a.out
 data_high_10
 result
+binanceCred.py
+binanceCred.pyc
+boot
+tmp
+actual
