@@ -4,6 +4,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#define MAX_SCORE_nbr 10000
+#define MAX_SIT_SIZE 2000
+
 typedef struct {
     long time;
     double open;
@@ -20,9 +23,9 @@ typedef struct {
 } Coin;
 
 typedef struct {
-    int score;
-    int minuteId;
-    int coinId;
+    double score;
+    long minuteId;
+    long coinId;
 } Score;
 
 typedef struct {
@@ -30,9 +33,11 @@ typedef struct {
     int nbrThreads;
     int nbrBlocks;
     int sitSize;
-    
-    Coin *source;
+
+    Coin* source;
+    Score* scores;
     long nbrCoins;
+    Minute* src;
     int cursorCoin;
     int cursorMinute;
     Coin** coins;
@@ -43,21 +48,68 @@ Env* e;
 __global__ void compare(Env* e) {
     // int x = threadIdx.x;
     // int y = blockIdx.x;
-    int cursorMinute = threadIdx.x * e->nbrThreads + blockIdx.x + e->cursorMinute;
+    int workerNbr = threadIdx.x * e->nbrThreads + blockIdx.x;
+    int cursorMinute = workerNbr + e->cursorMinute;
+    // printf("%lf\n", e->coins[e->cursorCoin]->minutes[cursorMinute].open);
+    // for (int i = 0; i < e->sitSize; i++) {
+    //     Minute* minute = &e->coins[e->cursorCoin]->minutes[cursorMinute + i];
+
+    //     // printf("%lf\n", minute->open);
+    //     if (i % 100 == 0) {
+    //         e->scores[workerNbr].score = i;
+    //     }
+    // }
+    // e->scores[workerNbr].score =
+    // e->coins[e->cursorCoin]->minutes[cursorMinute].volume;
+
+    // e->scores[workerNbr].score =
+    //     e->coins[e->cursorCoin]->minutes[cursorMinute].volume;
+
+    e->scores[workerNbr].score = e->coins[e->cursorCoin]->minutes[cursorMinute].time;
 }
 
-void init(int size, char* files[]) {
+extern "C" void bake(int sitSize, Minute* minutes) {
+    e->cursorCoin = 0;
+    e->sitSize = sitSize;
+    memcpy(e->src, minutes, sizeof(Minute) * sitSize);
+    for (; e->cursorCoin < e->nbrCoins; e->cursorCoin++) {
+        printf("%s\n", e->coins[e->cursorCoin+1]->name);
+        e->cursorMinute = 0;
+        while (1) {
+            compare<<<e->nbrBlocks, e->nbrThreads>>>(e);
+            cudaDeviceSynchronize();
+            cudaError_t error = cudaGetLastError();
+            if (error != cudaSuccess) {
+                printf("CUDA error: %s\n", cudaGetErrorString(error));
+                exit(-1);
+            }
+            for (int iScore = 0; iScore < e->nbrBlocks * e->nbrThreads;
+                 iScore++) {
+                printf("%lf\n", e->scores[iScore].score);
+            }
+            exit(0);
+            e->cursorMinute += e->nbrBlocks * e->nbrThreads;
+            if (e->cursorMinute >= e->coins[e->cursorCoin]->size - e->sitSize) {
+                break;
+            }
+        }
+    }
+}
+
+extern "C" void init(int size, char* files[]) {
+    cudaMallocManaged(&e, sizeof(Env));
     cudaMallocManaged(&e->coins, sizeof(void*) * size);
     cudaMallocManaged(&e->source, sizeof(Coin));
+    cudaMallocManaged(&e->src, sizeof(Minute) * MAX_SIT_SIZE);
     e->nbrCoins = 0;
     e->cursorCoin = 0;
-    e->nbrThreads = 128;
-    e->nbrBlocks = 128;
-
+    e->nbrThreads = 256;
+    e->nbrBlocks = 256;
+    cudaMallocManaged(&e->scores, sizeof(Score) * e->nbrThreads * e->nbrBlocks);
     // e->nbrThreads = 10;
     // e->nbrBlocks = 10;
 
-    e->sitSize = 400;
+    e->sitSize = 600;
     char path[128];
     for (int i = 0; i < size; i++) {
         snprintf(path, sizeof(path), "./data/%s", files[i]);
@@ -69,37 +121,15 @@ void init(int size, char* files[]) {
         cudaMallocManaged(&e->coins[i]->minutes, sizeAll);
         int res = read(fd, e->coins[i]->minutes, sizeAll);
         e->coins[i]->size = sizeAll / sizeof(Minute);
-        snprintf(e->coins[i]->name, strlen(files[i]), "%s", files[i]);
-        // printf("%ld %s\n", e->coins[i]->minutes[0].time, e->coins[i]->name);
+        snprintf(e->coins[i]->name, strlen(files[i]) + 1, "%s", files[i]);
+        // printf("%ld -  %s\n", e->coins[i]->minutes[0].time, e->coins[i]->name);
         e->nbrCoins += 1;
         close(fd);
     }
 }
 
-void bake() {
-    // cudaDeviceSynchronize();
-    cudaError_t error = cudaGetLastError();
-    if (error != cudaSuccess) {
-        printf("CUDA error: %s\n", cudaGetErrorString(error));
-        exit(-1);
-    }
-    for (e->cursorCoin; e->cursorCoin < e->nbrCoins; e->cursorCoin++) {
-        printf("%s\n", e->coins[e->cursorCoin]->name);
-        e->cursorMinute = 0;
-        while (1) {
-            e->cursorMinute += e->nbrBlocks * e->nbrThreads;
-            compare<<<e->nbrBlocks, e->nbrThreads>>>(e);
-            cudaDeviceSynchronize();
-            if (e->cursorMinute >= e->coins[e->cursorCoin]->size - e->sitSize){
-                break;
-            }
-        }
-    }
-}
-
-int main(int argc, char* argv[]) {
-    cudaMallocManaged(&e, sizeof(Env));
-    init(argc - 1, &argv[1]);
-    bake();
-    return 0;
-}
+// int main(int argc, char* argv[]) {
+//     init(argc - 1, &argv[1]);
+//     bake();
+//     return 0;
+// }

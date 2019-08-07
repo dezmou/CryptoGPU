@@ -16,7 +16,6 @@ LOW = 3
 CLOSE = 4
 VOLUME = 5
 
-
 db = pymysql.connect("localhost", "dez", os.environ['PASS'], "trade")
 cursor = db.cursor()
 
