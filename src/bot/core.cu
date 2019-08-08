@@ -50,12 +50,17 @@ typedef struct {
 Env* e;
 
 __global__ void compare(Env* e) {
-    int x = threadIdx.x;
-    int y = blockIdx.x;
-
     int workerNbr = threadIdx.x * e->nbrThreads + blockIdx.x;
     int cursorMinute = workerNbr + e->cursorMinute;
-
+    double score = 0;
+    for (int i = 1; i < e->sitSize; i++) {
+        // Minute* comp = &e->coins[e->cursorCoin]->minutes[cursorMinute + i];
+        double destPourcent =
+            e->coins[e->cursorCoin]->minutes[cursorMinute].open /
+            e->coins[e->cursorCoin]->minutes[cursorMinute + i].open * 100;
+        double srcPourcent = e->src[0].open / e->src[i].open * 100;
+        score += abs(destPourcent - srcPourcent);
+    }
     // printf("%lf\n", e->coins[e->cursorCoin]->minutes[cursorMinute].open);
     // for (int i = 0; i < e->sitSize; i++) {
     //     Minute* minute = &e->coins[e->cursorCoin]->minutes[cursorMinute + i];
@@ -71,14 +76,16 @@ __global__ void compare(Env* e) {
     // e->scores[workerNbr].score =
     //     e->coins[e->cursorCoin]->minutes[cursorMinute].volume;
 
-    e->scores[workerNbr].score =
-        e->coins[e->cursorCoin]->minutes[cursorMinute].open;
+    // e->scores[workerNbr].score =
+    //     e->coins[e->cursorCoin]->minutes[cursorMinute].open;
+    e->scores[workerNbr].score = score;
     e->scores[workerNbr].minuteId = cursorMinute;
     e->scores[workerNbr].coinId = e->cursorCoin;
 }
 
 void printBestScores() {
     for (int i = 0; i < e->nbrScores; i++) {
+        // for (int i = 0; i < 2; i++) {
         printf("%.15lf %s\n", e->bestScores[i].score,
                e->coins[e->bestScores[i].coinId]->name);
     }
@@ -104,10 +111,12 @@ extern "C" void bake(int sitSize, Minute* minutes) {
             }
             for (int iScore = 0; iScore < e->nbrBlocks * e->nbrThreads;
                  iScore++) {
-                
-                // printf("%lf %lf %s\n", e->scores[iScore].score,e->coins[e->scores[iScore].coinId]->minutes[e->scores[iScore].minuteId].volume, e->coins[e->scores[iScore].coinId]->name);
-                if (e->scores[iScore].score <
+                if (e->scores[iScore].score <=
                     e->bestScores[e->nbrScores - 1].score) {
+                    // printf("%lf %lf %s\n",
+                    // e->scores[iScore].score,e->coins[e->scores[iScore].coinId]->minutes[e->scores[iScore].minuteId].volume,
+                    // e->coins[e->scores[iScore].coinId]->name);
+
                     for (int iBest = 0; iBest < e->nbrScores; iBest++) {
                         if (e->scores[iScore].score <
                             e->bestScores[iBest].score) {
@@ -124,6 +133,7 @@ extern "C" void bake(int sitSize, Minute* minutes) {
                     }
                 }
             }
+            // exit(0);
             e->cursorMinute += e->nbrBlocks * e->nbrThreads;
             if (e->coins[e->cursorCoin]->size - e->cursorMinute <=
                 e->nbrBlocks * e->nbrThreads) {
@@ -143,7 +153,7 @@ extern "C" void init(int size, char* files[]) {
     e->cursorCoin = 0;
     e->nbrBlocks = 256;
     e->nbrThreads = 128;
-    e->nbrScores = 100;
+    e->nbrScores = 400;
 
     e->nbrBlocks = 256;
     e->nbrThreads = 256;
