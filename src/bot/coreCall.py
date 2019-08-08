@@ -11,7 +11,6 @@ CLOSE = 4
 VOLUME = 5
 
 class CoreCall:
-
     def __init__(self):
         self.couch = couchdb.Server()        
         self.queryDb = self.couch["cuda_core_query"]
