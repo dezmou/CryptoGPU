@@ -45,6 +45,7 @@ typedef struct {
     int cursorCoin;
     int cursorMinute;
     Coin** coins;
+    char* result;
 } Env;
 
 Env* e;
@@ -57,8 +58,8 @@ __global__ void compare(Env* e) {
         // Minute* comp = &e->coins[e->cursorCoin]->minutes[cursorMinute + i];
         double destPourcent =
             e->coins[e->cursorCoin]->minutes[cursorMinute].open /
-            e->coins[e->cursorCoin]->minutes[cursorMinute + i].open * 100;
-        double srcPourcent = e->src[0].open / e->src[i].open * 100;
+            e->coins[e->cursorCoin]->minutes[cursorMinute + i].open * 1000;
+        double srcPourcent = e->src[0].open / e->src[i].open * 1000;
         score += abs(destPourcent - srcPourcent);
     }
     // printf("%lf\n", e->coins[e->cursorCoin]->minutes[cursorMinute].open);
@@ -86,20 +87,23 @@ __global__ void compare(Env* e) {
 void printBestScores() {
     for (int i = 0; i < e->nbrScores; i++) {
         // for (int i = 0; i < 2; i++) {
-        printf("%.15lf %s\n", e->bestScores[i].score,
-               e->coins[e->bestScores[i].coinId]->name);
+        printf("%.15lf %s %ld\n", e->bestScores[i].score,
+               e->coins[e->bestScores[i].coinId]->name,
+               e->coins[e->bestScores[i].coinId]
+                   ->minutes[e->bestScores[i].minuteId]
+                   .time);
     }
     printf("\n");
 }
 
-extern "C" void bake(int sitSize, Minute* minutes) {
+extern "C" char* bake(int sitSize, Minute* minutes) {
     e->sitSize = sitSize;
     memcpy(e->src, minutes, sizeof(Minute) * sitSize);
     for (int iBest = 0; iBest < e->nbrScores; iBest++) {
         e->bestScores[iBest].score = 999999999999;
     }
     for (e->cursorCoin = 0; e->cursorCoin < e->nbrCoins; e->cursorCoin++) {
-        printf("%s\n", e->coins[e->cursorCoin]->name);
+        // printf("%s\n", e->coins[e->cursorCoin]->name);
         e->cursorMinute = 0;
         while (1) {
             compare<<<e->nbrBlocks, e->nbrThreads>>>(e);
@@ -141,7 +145,16 @@ extern "C" void bake(int sitSize, Minute* minutes) {
             }
         }
     }
-    printBestScores();
+    // printBestScores();
+    int nbrChars = 0;
+    for (int i = 0; i < e->nbrScores; i++) {
+        nbrChars += sprintf(&e->result[nbrChars], "%lf|%s|%ld\n", e->bestScores[i].score,
+                e->coins[e->bestScores[i].coinId]->name,
+                e->bestScores[i].minuteId);
+        
+    }
+    return e->result;
+    // printf("%s\n", e->result);
 }
 
 extern "C" void init(int size, char* files[]) {
@@ -149,11 +162,13 @@ extern "C" void init(int size, char* files[]) {
     cudaMallocManaged(&e->coins, sizeof(void*) * size);
     cudaMallocManaged(&e->source, sizeof(Coin));
     cudaMallocManaged(&e->src, sizeof(Minute) * MAX_SIT_SIZE);
+    e->result = (char*)malloc(MAX_SCORE_NBR * 1024);
+
     e->nbrCoins = 0;
     e->cursorCoin = 0;
     e->nbrBlocks = 256;
     e->nbrThreads = 128;
-    e->nbrScores = 400;
+    e->nbrScores = 2000;
 
     e->nbrBlocks = 256;
     e->nbrThreads = 256;

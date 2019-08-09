@@ -23,18 +23,16 @@ class CoreCall:
             
     def callCore(self, sit):
         idd = self.queryDb.save({"data" : json.dumps(sit)})[0]
-        print (idd)
-        return
         while True:
             res = self.resDb.get(idd)
             if res:
-                print (res)
+                print (res['data'])
                 self.resDb.delete(self.resDb[idd])
+                return res['data']
             time.sleep(0.1)
 
 if __name__ == "__main__":
     c = CoreCall()
-    sit = c.getSituation(200, "ETHBTC", 1)
-    print(sit)
+    sit = c.getSituation(100, "ETHBTC", 1)
     c.callCore(sit)
     # c.callCore()

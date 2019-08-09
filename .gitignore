@@ -1,4 +1,4 @@
-/src/visual/node_modules
+node_modules/
 venv/
 data/
 a.out

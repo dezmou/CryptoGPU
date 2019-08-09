@@ -19,7 +19,8 @@ class Core:
             for nbr in line:
                 data.append(float(nbr))
         param = (ctypes.c_double * len(data))(*data)
-        self.cuda.bake(len(sit), param);
+        self.cuda.bake.restype = ctypes.c_char_p;
+        return self.cuda.bake(len(sit), param);
     
     def __init__(self):
         self.cuda = ctypes.CDLL("./core.so")
@@ -38,11 +39,12 @@ class Core:
         while True:
             for chien in self.queryDb:
                 idd = self.queryDb[chien]["_id"]
-                self.bake(json.loads(self.queryDb[chien]["data"]))
-                # self.resDb[idd] = {"rouge" : "le rouge"}
-                # self.queryDb.delete(self.queryDb[chien])
+                print("BAKE")
+                res = self.bake(json.loads(self.queryDb[chien]["data"]))
+                print("DONE")
+                self.resDb[idd] = {"data" : res}
+                self.queryDb.delete(self.queryDb[chien])
             time.sleep(0.1)
-            break
 
 if __name__ == "__main__":
     Core()
