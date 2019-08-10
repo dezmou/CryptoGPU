@@ -50,35 +50,24 @@ typedef struct {
 
 Env* e;
 
+#define STEP_SIZE 20
+
 __global__ void compare(Env* e) {
     int workerNbr = threadIdx.x * e->nbrThreads + blockIdx.x;
     int cursorMinute = workerNbr + e->cursorMinute;
     double score = 0;
+    int step = 0;
     for (int i = 1; i < e->sitSize; i++) {
-        // Minute* comp = &e->coins[e->cursorCoin]->minutes[cursorMinute + i];
         double destPourcent =
-            e->coins[e->cursorCoin]->minutes[cursorMinute].open /
+            e->coins[e->cursorCoin]->minutes[cursorMinute + step].open /
             e->coins[e->cursorCoin]->minutes[cursorMinute + i].open * 1000;
-        double srcPourcent = e->src[0].open / e->src[i].open * 1000;
+        double srcPourcent = e->src[0 + step].open / e->src[i].open * 1000;
         score += abs(destPourcent - srcPourcent);
+        if (step > STEP_SIZE){
+            step += 1;
+        }
+            
     }
-    // printf("%lf\n", e->coins[e->cursorCoin]->minutes[cursorMinute].open);
-    // for (int i = 0; i < e->sitSize; i++) {
-    //     Minute* minute = &e->coins[e->cursorCoin]->minutes[cursorMinute + i];
-
-    //     // printf("%lf\n", minute->open);
-    //     if (i % 100 == 0) {
-    //         e->scores[workerNbr].score = i;
-    //     }
-    // }
-    // e->scores[workerNbr].score =
-    // e->coins[e->cursorCoin]->minutes[cursorMinute].volume;
-
-    // e->scores[workerNbr].score =
-    //     e->coins[e->cursorCoin]->minutes[cursorMinute].volume;
-
-    // e->scores[workerNbr].score =
-    //     e->coins[e->cursorCoin]->minutes[cursorMinute].open;
     e->scores[workerNbr].score = score;
     e->scores[workerNbr].minuteId = cursorMinute;
     e->scores[workerNbr].coinId = e->cursorCoin;
@@ -148,10 +137,9 @@ extern "C" char* bake(int sitSize, Minute* minutes) {
     // printBestScores();
     int nbrChars = 0;
     for (int i = 0; i < e->nbrScores; i++) {
-        nbrChars += sprintf(&e->result[nbrChars], "%lf|%s|%ld\n", e->bestScores[i].score,
-                e->coins[e->bestScores[i].coinId]->name,
-                e->bestScores[i].minuteId);
-        
+        nbrChars += sprintf(
+            &e->result[nbrChars], "%lf|%s|%ld\n", e->bestScores[i].score,
+            e->coins[e->bestScores[i].coinId]->name, e->bestScores[i].minuteId);
     }
     return e->result;
     // printf("%s\n", e->result);

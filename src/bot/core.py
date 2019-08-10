@@ -33,7 +33,7 @@ class Core:
         self.listenCouch()
 
     def listenCouch(self):
-        self.couch = couchdb.Server()     
+        self.couch = couchdb.Server()
         self.queryDb = self.couch["cuda_core_query"]
         self.resDb = self.couch["cuda_core_response"]
         while True:
