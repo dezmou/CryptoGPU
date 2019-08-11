@@ -4,6 +4,7 @@ import ctypes
 import couchdb
 import time
 import json
+import traceback
 
 DATE = 0
 OPEN = 1
@@ -47,4 +48,8 @@ class Core:
             time.sleep(0.1)
 
 if __name__ == "__main__":
-    Core()
+    try:
+        Core()
+    except Exception:
+        with open("error.log", "w") as f:
+            f.write(traceback.format_exc())

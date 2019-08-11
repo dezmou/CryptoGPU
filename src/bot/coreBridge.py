@@ -1,3 +1,4 @@
+import traceback
 import time
 import couchdb
 import struct
@@ -68,11 +69,16 @@ if __name__ == "__main__":
     i = 0
     with open("sim2", "a") as f:
         while True:
-            i += 1
-            coin = coins[random.randint(0,len(coins) - 1)]
-            size = os.stat("./data/{}".format(coin)).st_size / 6 / 8
-            minuteId = random.randint(0, size - 5000);
-            sit = Data.getSituation(400, coin, minuteId)
-            res = c.getMatchs(sit)
-            f.write("{}|{}:\n{}#".format(coin, minuteId, res))
-            print(i)
+            try:
+                i += 1
+                coin = coins[random.randint(0,len(coins) - 1)]
+                size = os.stat("./data/{}".format(coin)).st_size / 6 / 8
+                minuteId = random.randint(0, size - 5000);
+                sit = Data.getSituation(400, coin, minuteId)
+                res = c.getMatchs(sit)
+                f.write("{}|{}:\n{}#".format(coin, minuteId, res))
+                print(i)
+            except Exception:
+                with open("errorCoreBride.log", "w") as f:
+                    f.write(traceback.print_exc())
+                    
