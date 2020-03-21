@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <sys/time.h>
+#include <time.h>
 #include <unistd.h>
 
 #define KNRM "\x1B[0m"
@@ -31,8 +33,22 @@ typedef struct {
 Minute *data;
 int nbrMinutes;
 int cursor;
-
+int nbrBets = 0;
+double totalFees = 0;
+double totalWait = 0;
 double bank = 10000;
+
+// potards
+double changeRequired = 1000;
+double closeLoss = 2;
+double closeWin = 1;
+double maxWait = 60;
+
+double randfrom(double min, double max) {
+    double range = (max - min);
+    double div = RAND_MAX / range;
+    return min + (rand() / div);
+}
 
 void fillData() {
     int fd = open("BTCUSDT", O_RDONLY);
@@ -44,70 +60,95 @@ void fillData() {
     nbrMinutes = size / sizeof(Minute);
 }
 
-// void printLine(Minute *minute) {
-//     // printf("%ld %lf %lf %lf %lf %lf \n", minute->time, minute->open,
-//     // minute->high, minute->low, minute->close, minute->volume);
-//     double change = 100000 - (minute->open / minute->close * 100000);
-//     // printf("%lf %lf %lf\n",minute->open, minute->close, change);
-//     if (abs(change) > 800) {
-//         nbrBet++;
-//         double changeNext = 100000 - (minute->open / minute[5].open *
-//         100000); if ((change > 0 && changeNext > 0) || (change < 0 &&
-//         changeNext < 0)) {
-//             ok += abs(changeNext);
-//             // ok -= abs(changeNext * 0.02);
-//             printf(KGRN);
-//         } else {
-//             ko += abs(changeNext);
-//             printf(KRED);
-//         }
-//         printf(
-//             "%ld  H-L:%11lf  O-C:%11lf   VO:%11lf   CH:%11lf  "
-//             "CHN:%11lf  OK:%11lf   KO:%11lf  DIF:%11lf  BET: %d\n",
-//             minute->time, minute->high - minute->low,
-//             minute->open - minute->close, minute->volume, change / 1000,
-//             changeNext / 1000, ok / 1000, ko / 1000, (ok / ko), nbrBet);
-//     }
-// }
-
-double bet(Minute *minute, char type, double amount, double closeWin,
-           double closeLoss) {
+double bet(Minute *minute, char type, double amount, double acloseWin,
+           double acloseLoss) {
     double fee = amount * RAKE;
     double final = amount;
-    for (int i = 0; i < 60; i++) {
-        double change = ((minute[i].close / minute->close * 100) - 100) *
-                        (type == BUY ? 1 : -1);
-        if (change > closeWin || change < -closeLoss) {
-            final = amount + (amount * (change * 0.01));
-            if (change < 0) {
-                printf(KRED);
-            } else {
-                printf(KGRN);
-            }
-            printf("%7d |  %lf %lf change %lf final %lf %s bank : %lf\n", i,
-                   minute->close, minute[i].close, change, final,
-                   type == BUY ? "BUY" : "SELL", bank);
+    double change;
+    int i;
+    for (i = 1; i <= (int)maxWait; i++) {
+        change = ((minute[i].close / minute->close * 100) - 100) *
+                 (type == BUY ? 1 : -1);
+        if (change > acloseWin || change < -acloseLoss) {
             break;
         }
     }
+    cursor += i;
+    totalWait += i;
+    final = amount + (amount * (change * 0.01));
     fee += final * RAKE;
+    totalFees += fee;
     final += -fee;
+    if (change > 0) {
+        printf(KGRN);
+    }
+    if (change < 0) {
+        printf(KRED);
+    }
+    printf("%-5s ST : %-10.2lf END : %-10.2lf I : %-4d  CH : %-10.2lf  BK : %-10.2lf\n",
+           type == BUY ? "BUY" : "SELL", minute->open, minute[i].open, i, change, bank);
     return final;
 }
 
+void analyse(Minute *minute) {
+    double change = 100000 - (minute->open / minute->close * 100000);
+    if (abs(change) > changeRequired) {
+        nbrBets++;
+        double betSize = 10000;
+        bank +=
+            bet(minute, change < 0 ? BUY : SELL, betSize, closeWin, closeLoss);
+        bank += -betSize;
+        // printf("%8.2lf %8.2lf\n", minute->open, minute->close);
+    }
+}
+
 void play(Minute *minute) {
-    double betSize = 100;
-    bank += -betSize;
-    bank += bet(minute, SELL, betSize, 1.3, 1.3);
+    analyse(minute);
+    // double betSize = 100;
+    // bank += -betSize;
+    // bank += bet(minute, SELL, betSize, 0.5, 0.5);
     // printf(" bank : %lf\n", bank);
 }
 
 int main() {
+    srand(time(NULL));
     fillData();
-    for (cursor = 0; cursor < nbrMinutes; cursor += 5000) {
-        play(&data[cursor]);
+    double bestGains = 0;
+    double worstGains = 0;
+    for (int i = 0; i < 10000000; i++) {
+        nbrBets = 0;
+        bank = 10000;
+        totalFees = 0;
+        totalWait = 0;
+
+        changeRequired = 480;
+        closeWin = 0.23;
+        closeLoss = 0.89;
+        maxWait = 37;
+
+        // changeRequired = randfrom(100, 3000);
+        // closeWin = randfrom(0.01, 1);
+        // closeLoss = randfrom(0.01, 1);
+        // maxWait = randfrom(1, 60);
+
+
+        for (cursor = 0; cursor < nbrMinutes; cursor += 1) {
+            play(&data[cursor]);
+            // getchar();
+            // break;
+        }
+        if (bank > bestGains && nbrBets > 600) {
+            // printf(KGRN);
+            printf(
+                "NBB : %5d CHR:%8.2lf CLW:%8.2lf CLS%8.2lf BK:%10.2lf  "
+                "FEE:%10.2lf   MXW:%10.2lf TW:%10.2lf\n",
+                nbrBets, changeRequired, closeWin, closeLoss, bank, totalFees,
+                maxWait, totalWait / 60);
+            bestGains = bank;
+        }
+        break;
         // getchar();
-        // break;
     }
+    printf("DONE\n");
     return 0;
 }
