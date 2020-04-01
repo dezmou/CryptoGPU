@@ -17,37 +17,46 @@ double getVariance(Minute *minute, Potards *potards) {
     return (max / min * 100) - 100;
 }
 
-Bet newBet() {
+Bet newBet(Minute *minute, int type, double amount, double closeWin,
+           double closeLose) {
     Bet bet;
-    bet.type = NO_BET;
+    bet.type = type;
     bet.totalFee = 0;
-    bet.amount = 0.015;
+    bet.amount = amount;
+    if (bet.type == SELL) {
+        bet.closeLose = minute->close * (1 + closeLose * 0.01);
+        bet.closeWin = minute->close * (1 - closeWin * 0.01);
+    } else if (bet.type == BUY) {
+        bet.closeLose = minute->close * (1 - closeLose * 0.01);
+        bet.closeWin = minute->close * (1 + closeWin * 0.01);
+    }
     return bet;
 }
 
 Bet analyse(Minute *minute, Potards *potards) {
-    Bet bet = newBet();
-    // getchar();
     double change_before_long =
         100 - (minute[-(potards->change_before_long_steps)].close /
                minute->close * 100);
-    // printf("%lf %lf %lf\n",minute[-2].close,minute->close
-    // ,change_before_long); getchar();
     double variance = getVariance(minute, potards);
-
     if (change_before_long > potards->change_before_long &&
         variance < potards->maxVariance) {
-        bet.amount = BET_AMOUNT / minute->close;
+        // bet.amount = BET_AMOUNT / minute->close;
 
-        bet.type = SELL;
-        bet.closeLose = minute->close *
-                        (1 + (potards->closeLose * change_before_long) * 0.01);
-        bet.closeWin = minute->close *
-                       (1 - (potards->closeWin * change_before_long) * 0.01);
+        // bet.type = SELL;
+        // bet.closeLose = minute->close *
+        //                 (1 + (potards->closeLose * change_before_long) *
+        //                 0.01);
+        // bet.closeWin = minute->close *
+        //                (1 - (potards->closeWin * change_before_long) * 0.01);
+
+        return newBet(minute, SELL, BET_AMOUNT / minute->close,
+                      potards->closeWin * change_before_long,
+                      potards->closeLose * change_before_long);
 
         // bet.type = BUY;
         // bet.closeLose = minute->close * (1 - 0.01);
         // bet.closeWin = minute->close * (1 + 0.01);
+    } else {
+        return newBet(NULL, NO_BET, 0, 0, 0);
     }
-    return bet;
 }
