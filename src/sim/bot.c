@@ -8,6 +8,14 @@ Potards newPotards() {
     res.closeLose = 3.55;
     res.period_for_variance = 40;
     res.maxVariance = 17.11;
+
+    // res.change_before_long = 0.20;
+    // res.change_before_long_steps = 50;
+    // res.closeWin = 0.1;
+    // res.closeLose = 0.1;
+    // res.period_for_variance = 40;
+    // res.maxVariance = 17.11;
+
     return res;
 }
 

@@ -66,11 +66,6 @@ typedef struct {
     double variance;
 } Broker;
 
-// typedef struct {
-//     Minute *data;
-//     int nbrMinutes;
-// } Env;
-
 typedef struct {
     double change_before_long;
     long change_before_long_steps;
