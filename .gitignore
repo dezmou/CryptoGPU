@@ -1,4 +1,5 @@
 node_modules/
+__pycache__/
 venv/
 data/
 a.out
@@ -9,6 +10,5 @@ binanceCred.pyc
 boot
 tmp
 actual
--O3
-Untitled-1.txt
 core.so
+res.csv

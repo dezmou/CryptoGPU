@@ -1,0 +1,63 @@
+<html>
+
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pouchdb/7.1.1/pouchdb.js">
+  </script>
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/chartist.js/latest/chartist.min.css">
+  <script src="//cdn.jsdelivr.net/chartist.js/latest/chartist.min.js"></script>
+</head>
+<style>
+  #canvas {
+    border: 1px solid black;
+  }
+</style>
+
+<body>
+  <canvas id="canvas" width="5000" height="1080"></canvas>
+  <script>
+    
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+
+    const printSituation = (data) => {
+      ctx.beginPath();
+      ctx.moveTo(0, 500);
+      let i = -1;
+      for (let open of opens) {
+        i++;
+        ctx.lineTo(i*AMPLIX, 500 + open);
+        ctx.stroke();
+      }
+    }
+
+    const clear = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      console.clear();
+    }
+
+    const onSignal = (signal) => {
+        console.log(signal);   
+    }
+
+    (async () => {
+      let remote = new PouchDB(`http://${window.location.hostname}:5984/cuda_lab_visual`);
+      // let local = new PouchDB('feed');
+      remote.changes({
+        since : 'now',
+        live: true,
+        include_docs: true
+      }).on('change', function (change) {
+        console.log(change);
+        try {
+          onSignal(change.doc.data);
+        } catch (error) {
+          console.error(error);
+        }
+      }).on('error', function (err) {
+        console.error("--->", err);
+      });
+    })()
+  </script>
+</body>
+
+</html>
