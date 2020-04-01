@@ -34,28 +34,15 @@ Bet newBet(Minute *minute, int type, double amount, double closeWin,
 }
 
 Bet analyse(Minute *minute, Potards *potards) {
-    double change_before_long =
+        double change_before_long =
         100 - (minute[-(potards->change_before_long_steps)].close /
                minute->close * 100);
     double variance = getVariance(minute, potards);
     if (change_before_long > potards->change_before_long &&
         variance < potards->maxVariance) {
-        // bet.amount = BET_AMOUNT / minute->close;
-
-        // bet.type = SELL;
-        // bet.closeLose = minute->close *
-        //                 (1 + (potards->closeLose * change_before_long) *
-        //                 0.01);
-        // bet.closeWin = minute->close *
-        //                (1 - (potards->closeWin * change_before_long) * 0.01);
-
         return newBet(minute, SELL, BET_AMOUNT / minute->close,
                       potards->closeWin * change_before_long,
                       potards->closeLose * change_before_long);
-
-        // bet.type = BUY;
-        // bet.closeLose = minute->close * (1 - 0.01);
-        // bet.closeWin = minute->close * (1 + 0.01);
     } else {
         return newBet(NULL, NO_BET, 0, 0, 0);
     }

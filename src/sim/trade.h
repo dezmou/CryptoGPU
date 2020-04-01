@@ -21,7 +21,6 @@
 #define BUY 1
 #define SELL 2
 
-
 typedef struct {
     long time;
     double open;
@@ -34,7 +33,7 @@ typedef struct {
 typedef struct {
     int nbrMinutes;
     Minute *minutes;
-}Data;
+} Data;
 
 typedef struct {
     int type;
@@ -81,5 +80,6 @@ typedef struct {
     double maxVariance;
 } Potards;
 
-Data loadMinutes(char * path);
+Data loadMinutes(char *path);
 Bet analyse(Minute *minute, Potards *potards);
+void printMinute(Minute *minute);

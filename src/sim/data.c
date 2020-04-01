@@ -7,7 +7,11 @@ Data loadMinutes(char * path) {
     fstat(fd, &buf);
     off_t size = buf.st_size;
     data.minutes = malloc(size);
-    read(fd, data.minutes, size);
+    int rd = read(fd, data.minutes, size);
+    if (rd <= 0){
+        printf("ERROR LOAD FILE\n");
+        exit(0);
+    }
     data.nbrMinutes = size / sizeof(Minute);
     return data;
 }
