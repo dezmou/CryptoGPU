@@ -1,25 +1,5 @@
-#include <fcntl.h>
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <sys/time.h>
-#include <time.h>
-#include <unistd.h>
+#include "trade.h"
 
-#define KNRM "\x1B[0m"
-#define KRED "\x1B[31m"
-#define KGRN "\x1B[32m"
-#define KYEL "\x1B[33m"
-#define KBLU "\x1B[34m"
-#define KMAG "\x1B[35m"
-#define KCYN "\x1B[36m"
-#define KWHT "\x1B[37m"
-
-#define NO_BET 0
-#define BUY 1
-#define SELL 2
 
 // #define TIME_START 200000
 #define TIME_START 50
@@ -30,54 +10,7 @@
 
 #define LEARN 0
 
-#define BET_AMOUNT 10000
 // #define FEE 0.0000
-
-typedef struct {
-    long time;
-    double open;
-    double high;
-    double low;
-    double close;
-    double volume;
-} Minute;
-
-typedef struct {
-    int type;
-    double price;
-} Order;
-
-typedef struct {
-    int type;
-    long startCursor;
-    double amount;
-    double price;
-    double closeWin;
-    double closeLose;
-    double totalFee;
-} Bet;
-
-typedef struct {
-    long cursor;
-    double bank;
-    Bet *bet;
-    Minute *minutes;
-    int nbrBets;
-    double totalFee;
-    long nbrWon;
-    long nbrLost;
-    int flatScore;
-    int nbrFlatScore;
-    double lastFlatBank;
-    double variance;
-} Broker;
-
-typedef struct {
-    Minute *data;
-    int nbrMinutes;
-} Env;
-
-Env *e;
 
 double randfrom(double min, double max) {
     double range = (max - min);
@@ -85,20 +18,22 @@ double randfrom(double min, double max) {
     return min + (rand() / div);
 }
 
-Broker *newBroker() {
-    Broker *broker = malloc(sizeof(Broker));
-    broker->cursor = TIME_START;
-    broker->bet = NULL;
-    broker->minutes = e->data;
-    broker->bank = 0;
-    broker->nbrBets = 0;
-    broker->totalFee = 0;
-    broker->nbrWon = 0;
-    broker->nbrLost = 0;
-    broker->flatScore = 0;
-    broker->nbrFlatScore = 0;
-    broker->lastFlatBank = 0;
-    broker->variance = 0;
+Broker newBroker(Data data) {
+    // Broker *broker = malloc(sizeof(Broker));
+    Broker broker;
+    broker.cursor = TIME_START;
+    broker.bet = NULL;
+    broker.minutes = data.minutes;
+    broker.bank = 0;
+    broker.nbrBets = 0;
+    broker.totalFee = 0;
+    broker.nbrWon = 0;
+    broker.nbrLost = 0;
+    broker.flatScore = 0;
+    broker.nbrFlatScore = 0;
+    broker.lastFlatBank = 0;
+    broker.variance = 0;
+    broker.nbrMinutes = data.nbrMinutes;
     return broker;
 }
 
@@ -108,82 +43,24 @@ void printMinute(Minute *minute) {
            minute->close);
 }
 
-Bet newBet() {
-    Bet bet;
-    bet.type = NO_BET;
-    bet.totalFee = 0;
-    bet.amount = 0.015;
-    return bet;
-}
-
-typedef struct {
-    double change_before_long;
-    long change_before_long_steps;
-    double closeWin;
-    double closeLose;
-    int period_for_variance;
-    double maxVariance;
-} Potards;
-
-Potards *newPotards() {
-    Potards *res = malloc(sizeof(Potards));
-    res->change_before_long = 1.35;
-    res->change_before_long_steps = 10;
-    res->closeWin = 0.64;
-    res->closeLose = 3.55;
-    res->period_for_variance = 40;
-    res->maxVariance = 17.11;
+Potards newPotards() {
+    Potards res;
+    res.change_before_long = 1.35;
+    res.change_before_long_steps = 10;
+    res.closeWin = 0.64;
+    res.closeLose = 3.55;
+    res.period_for_variance = 40;
+    res.maxVariance = 17.11;
     if (LEARN) {
-        res->change_before_long = randfrom(0.01, 5);
-        res->change_before_long_steps = (long)randfrom(1, 50);
-        res->closeWin = randfrom(0.05, 5);
-        res->closeLose = randfrom(0.05, 5);
-        res->maxVariance = randfrom(1, 20);
+        res.change_before_long = randfrom(0.01, 5);
+        res.change_before_long_steps = (long)randfrom(1, 50);
+        res.closeWin = randfrom(0.05, 5);
+        res.closeLose = randfrom(0.05, 5);
+        res.maxVariance = randfrom(1, 20);
     }
     return res;
 }
 
-double getVariance(Minute *minute, Potards *potards) {
-    double min = 99999999999;
-    double max = -9999999999;
-    for (int cursor = -(potards->period_for_variance + 1); cursor <= 0; cursor++) {
-        if (minute[cursor].low < min) {
-            min = minute[cursor].low;
-        }
-        if (minute[cursor].high > max) {
-            max = minute[cursor].high;
-        }
-    }
-    return (max / min * 100) - 100;
-}
-
-Bet analyse(Minute *minute, Potards *potards) {
-    Bet bet = newBet();
-    // getchar();
-    double change_before_long =
-        100 - (minute[-(potards->change_before_long_steps)].close /
-               minute->close * 100);
-    // printf("%lf %lf %lf\n",minute[-2].close,minute->close
-    // ,change_before_long); getchar();
-    double variance = getVariance(minute, potards);
-    
-    
-    if (change_before_long > potards->change_before_long && variance < potards->maxVariance) {
-
-        bet.amount = BET_AMOUNT / minute->close;
-
-        bet.type = SELL;
-        bet.closeLose = minute->close *
-                        (1 + (potards->closeLose * change_before_long) * 0.01);
-        bet.closeWin = minute->close *
-                       (1 - (potards->closeWin * change_before_long) * 0.01);
-
-        // bet.type = BUY;
-        // bet.closeLose = minute->close * (1 - 0.01);
-        // bet.closeWin = minute->close * (1 + 0.01);
-    }
-    return bet;
-}
 
 FILE *fp;
 
@@ -267,7 +144,7 @@ int tickBroker(Broker *broker) {
                 }
             }
         }
-        if (broker->cursor >= e->nbrMinutes - 1 ||
+        if (broker->cursor >= broker->nbrMinutes - 1 ||
             (broker->cursor - TIME_START) > AMOUNT_STOP) {
             return 0;
         }
@@ -299,49 +176,40 @@ void bake(Potards *potards, Broker *broker) {
     } while (tickBroker(broker));
 }
 
-void fillData() {
-    int fd = open("../../data/bin/BTCUSDT", O_RDONLY);
-    // int fd = open("ETHUSDT", O_RDONLY);
-    struct stat buf;
-    fstat(fd, &buf);
-    off_t size = buf.st_size;
-    e->data = malloc(size);
-    read(fd, e->data, size);
-    e->nbrMinutes = size / sizeof(Minute);
-}
-
+// "../../data/bin/BTCUSDT"
 int main() {
     if (!LEARN) {
         fp = fopen("res.csv", "w");
         fprintf(fp, "price, bank, fee\n");
     }
     srand(time(NULL));
-    e = malloc(sizeof(e));
-    fillData();
+    // e = malloc(sizeof(e));
+    Data data = loadMinutes("../../data/bin/BTCUSDT");
+    // e->data = data.minutes;
+    // e->nbrMinutes = data.nbrMinutes;
+    // fillData();
     double maxBank = -999999999;
     double maxRoi = -9999999999;
     int maxFlatLine = -9999999;
     for (int i = 0; i < 100000000; i++) {
-        Potards *potard = newPotards();
-        Broker *broker = newBroker();
-        bake(potard, broker);
-        double roi = broker->bank / broker->nbrBets;
-        if ((broker->bank > maxBank || broker->flatScore > maxFlatLine) && broker->nbrBets > 100 && broker->bank > 0 && broker->flatScore > 4) {
-            // if (broker->flatScore > maxFlatLine && broker->bank > 0 &&
-            // broker->nbrBets > 1000) {
+        Potards potard = newPotards();
+        Broker broker = newBroker(data);
+        bake(&potard, &broker);
+        double roi = broker.bank / broker.nbrBets;
+        if ((broker.bank > maxBank || broker.flatScore > maxFlatLine) && broker.nbrBets > 100 && broker.bank > 0 && broker.flatScore > 4) {
+            // if (broker.flatScore > maxFlatLine && broker.bank > 0 &&
+            // broker.nbrBets > 1000) {
             printf(
                 "BK: %-8.2lf  NB: %-5d CBL: %-8.2lf CBLS: %-8.2ld CLW: %-8.2lf "
                 "CLS: %-8.2lf FEE: %-8.2lf ROI: %-8.2lf NBW: %5ld NBL: %5ld "
                 "FL: %-5d MXV: %-8.2lf\n",
-                broker->bank, broker->nbrBets, potard->change_before_long,
-                potard->change_before_long_steps, potard->closeWin,
-                potard->closeLose, broker->totalFee, roi, broker->nbrWon,
-                broker->nbrLost, broker->flatScore, potard->maxVariance);
-            maxBank = broker->bank;
-            maxFlatLine = broker->flatScore;
+                broker.bank, broker.nbrBets, potard.change_before_long,
+                potard.change_before_long_steps, potard.closeWin,
+                potard.closeLose, broker.totalFee, roi, broker.nbrWon,
+                broker.nbrLost, broker.flatScore, potard.maxVariance);
+            maxBank = broker.bank;
+            maxFlatLine = broker.flatScore;
         }
-        free(potard);
-        free(broker);
         if (!LEARN) {
             break;
             fclose(fp);
