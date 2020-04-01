@@ -2,6 +2,7 @@ const fetch = require("node-fetch");
 const crypto = require("crypto-js");
 const struct = require('python-struct');
 const fs = require("fs");
+const exec = require('child_process').exec;
 
 const OPEN_TIME = 0;
 const OPEN = 1;
@@ -9,6 +10,10 @@ const HIGH = 2;
 const LOW = 3;
 const CLOSE = 4;
 const VOLUME = 5;
+
+const NO_BET = 0;
+const BUY = 1;
+const SELL = 2;
 
 const key = "s5PVpvenSY6UC7z5rYYy2dcDbbsWhPAgWl9oTkXygUyBEdsuXpFkyUcY9L8ifrKh";
 const secret = require("./secret");
@@ -36,9 +41,25 @@ class Bot {
         })
     }
 
+    async analyse() {
+        const out = await new Promise(resolve => {
+            exec("../sim/bot ./binance", (error, stdout, stderr) => {
+                resolve(stdout);
+            });
+        })
+        const res = out.split("\n").find(e => e.indexOf("BET;") !== -1).split(";")
+        return {
+            bet : ['no', 'buy', 'sell'][res[1]],
+            close_win : res[2],
+            close_lose : res[3]
+        }
+    }
+
     async getCandles() {
         const candles = (await this.apiRequest("klines", { symbol: "BTCUSDT", interval: "1m", limit: 500 }, "GET"))
         await this.saveCandlesBinary(candles)
+        const analyst = await this.analyse();
+        console.log(analyst);
     }
 
     async apiRequest(endPoint, params, method) {

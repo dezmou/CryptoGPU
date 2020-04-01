@@ -12,13 +12,15 @@ Potards newPotards() {
 }
 
 void printBet(Bet bet) {
-    printf("%-5d, AMT: %-10lf, CLW: %-10lf, CLL: %-10lf\n", bet.type, bet.amount,
-           bet.closeWin, bet.closeLose);
+    // printf("BET %-5d, AMT: %-10lf, CLW: %-10lf, CLL: %-10lf\n", bet.type,
+    //        bet.amount, bet.closeWin, bet.closeLose);
+    printf("BET;%d;%lf;%lf\n", bet.type, bet.closeWin, bet.closeLose);
 }
 
 int main(int argc, char *argv[]) {
-    Data data = loadMinutes(argv[0]);
-    printMinute(data.minutes);
+    Data data = loadMinutes(argv[1]);
+    printf("%d\n", data.nbrMinutes);
+    printMinute(&data.minutes[data.nbrMinutes - 1]);
     Potards potards = newPotards();
     Bet bet = analyse(&data.minutes[data.nbrMinutes - 1], &potards);
     printBet(bet);

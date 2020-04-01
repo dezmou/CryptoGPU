@@ -23,7 +23,11 @@ Bet newBet(Minute *minute, int type, double amount, double closeWin,
     bet.type = type;
     bet.totalFee = 0;
     bet.amount = amount;
-    if (bet.type == SELL) {
+    bet.closeLose = 0;
+    bet.closeWin = 0;
+    if (bet.type == NO_BET) {
+        return bet;
+    } else if (bet.type == SELL) {
         bet.closeLose = minute->close * (1 + closeLose * 0.01);
         bet.closeWin = minute->close * (1 - closeWin * 0.01);
     } else if (bet.type == BUY) {
@@ -34,7 +38,7 @@ Bet newBet(Minute *minute, int type, double amount, double closeWin,
 }
 
 Bet analyse(Minute *minute, Potards *potards) {
-        double change_before_long =
+    double change_before_long =
         100 - (minute[-(potards->change_before_long_steps)].close /
                minute->close * 100);
     double variance = getVariance(minute, potards);
