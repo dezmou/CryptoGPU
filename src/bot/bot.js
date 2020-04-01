@@ -21,11 +21,17 @@ const apiUrl = "https://fapi.binance.com";
 
 class Bot {
     constructor() {
+        this.lastMinute = 0;
         this.init()
     }
 
     async init() {
-        this.getCandles()
+        while (true) {
+            const candles = await this.waitNewMinute();
+            await this.saveCandlesBinary(candles)
+            const analyst = await this.analyse();
+            console.log(analyst);
+        }
     }
 
     async saveCandlesBinary(candles) {
@@ -47,19 +53,29 @@ class Bot {
                 resolve(stdout);
             });
         })
+        console.log(out);
         const res = out.split("\n").find(e => e.indexOf("BET;") !== -1).split(";")
         return {
-            bet : ['no', 'buy', 'sell'][res[1]],
-            close_win : res[2],
-            close_lose : res[3]
+            bet: ['no', 'buy', 'sell'][res[1]],
+            close_win: res[2],
+            close_lose: res[3]
+        }
+    }
+
+    async waitNewMinute() {
+        while (true) {
+            const res = await this.getCandles()
+            if (this.lastMinute !== res[res.length - 2][OPEN_TIME]) {
+                this.lastMinute = res[res.length - 2][OPEN_TIME];
+                return res;
+            }
+            await new Promise(resolve => setTimeout(resolve, 1000));
         }
     }
 
     async getCandles() {
         const candles = (await this.apiRequest("klines", { symbol: "BTCUSDT", interval: "1m", limit: 500 }, "GET"))
-        await this.saveCandlesBinary(candles)
-        const analyst = await this.analyse();
-        console.log(analyst);
+        return candles;
     }
 
     async apiRequest(endPoint, params, method) {
