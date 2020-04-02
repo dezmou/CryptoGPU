@@ -38,6 +38,11 @@ Bet newBet(Minute *minute, int type, double amount, double closeWin,
 }
 
 Bet analyse(Minute *minute, Potards *potards) {
+    // dev
+    // return newBet(minute, SELL, BET_AMOUNT / minute->close,
+    //               potards->closeWin ,
+    //               potards->closeLose);
+
     double change_before_long =
         100 - (minute[-(potards->change_before_long_steps)].close /
                minute->close * 100);

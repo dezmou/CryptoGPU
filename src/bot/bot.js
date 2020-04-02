@@ -4,6 +4,7 @@ const struct = require('python-struct');
 const fs = require("fs");
 const exec = require('child_process').exec;
 const secrets = require("./secret");
+const notif = require("./notif");
 
 const OPEN_TIME = 0;
 const OPEN = 1;
@@ -27,48 +28,58 @@ class Bot {
         this.init()
     }
 
-    async betBinance(bet) {
+    async betBinance(bet, candles) {
+        const sumary = {}
         bet.close_win = Number.parseFloat(bet.close_win).toFixed(2);
         bet.close_lose = Number.parseFloat(bet.close_lose).toFixed(2);
 
         const amount = 0.01;
 
-        // open order
-        const openOrder = await this.apiRequest('order', {
-            symbol: "BTCUSDT",
-            side: 'SELL',
-            type: "MARKET",
-            quantity: amount
-        }, 'POST')
+        const [
+            openOrder,
+            winOrder,
+            loseOrder
+        ] = await Promise.all([
+            this.apiRequest('order', {
+                symbol: "BTCUSDT",
+                side: 'SELL',
+                type: "MARKET",
+                quantity: amount
+            }, 'POST'),
+            this.apiRequest('order', {
+                symbol: "BTCUSDT",
+                side: 'BUY',
+                type: "LIMIT",
+                price: bet.close_win,
+                quantity: amount,
+                timeInForce: 'GTC'
+            }, 'POST'),
+            this.apiRequest('order', {
+                symbol: "BTCUSDT",
+                side: 'BUY',
+                type: "STOP_MARKET",
+                stopPrice: bet.close_lose,
+                quantity: amount
+            }, 'POST')
+        ])
 
-        // Win order
-        const winOrder = await this.apiRequest('order', {
-            symbol: "BTCUSDT",
-            side: 'BUY',
-            type: "LIMIT",
-            price: bet.close_win,
-            quantity: amount,
-            timeInForce: 'GTC'
-        }, 'POST')
+        // console.log(openOrder);
+        // console.log(loseOrder);
 
-        // lose order
-        const closeOrder = await this.apiRequest('order', {
+        const openOrderRes = await this.apiRequest('order', {
             symbol: "BTCUSDT",
-            side: 'BUY',
-            type: "STOP_MARKET",
-            // price: bet.close_lose,
-            stopPrice: bet.close_lose,
-            quantity: amount
-        }, 'POST')
-        console.log(openOrder);
-        console.log(closeOrder);
+            orderId: openOrder.orderId
+        }, 'GET')
+        sumary.openTarget = candles[candles.length - 2][CLOSE];
+        sumary.openFilled = openOrderRes.avgPrice
 
+        // notif("Bet SELL", `Target : ${sumary.openTarget}\n Filled : ${sumary.openFilled}`);
+        // console.log(sumary);
         while (true) {
             const allOrders = await this.apiRequest('openOrders', {
                 symbol: "BTCUSDT",
             }, 'GET')
-            // console.log(allOrders);
-            if (allOrders.length === 0){
+            if (allOrders.length === 0) {
                 break;
             }
             if (allOrders.length !== 2) {
@@ -78,17 +89,34 @@ class Bot {
             }
             await new Promise(resolve => setTimeout(resolve, 1000));
         }
-        console.log("DONE BET");
+
+        const tradeHistory = await this.apiRequest('allOrders', {
+            symbol: "BTCUSDT",
+            orderId: openOrder.orderId
+        }, 'GET')
+        const resWin = tradeHistory.find(e => e.orderId === winOrder.orderId);
+        const resLose = tradeHistory.find(e => e.orderId === loseOrder.orderId);
+        if (resWin.status === 'FILLED') {
+            sumary.won = true;
+            sumary.closeTarget = bet.close_win;
+            sumary.closeFilled = resWin.avgPrice;
+            notif("WON", `Target : ${bet.close_win}\n Filled : ${resWin.avgPrice}`);
+        } else {
+            sumary.won = false;
+            sumary.closeTarget = bet.close_lose;
+            sumary.closeFilled = resLose.avgPrice;
+            notif("LOST", `Target : ${bet.close_lose}\n Filled : ${resLose.avgPrice}`);
+        }
+        console.log(sumary);
         this.lastMinute = 0;
     }
 
     async init() {
         while (true) {
             const candles = await this.waitNewMinute();
-            await this.saveCandlesBinary(candles)
-            const bet = await this.analyse();
+            const bet = await this.analyse(candles);
             if (bet.type !== "no") {
-                await this.betBinance(bet);
+                await this.betBinance(bet, candles);
             }
         }
     }
@@ -105,7 +133,8 @@ class Bot {
         })
     }
 
-    async analyse() {
+    async analyse(candles) {
+        await this.saveCandlesBinary(candles)
         const out = await new Promise(resolve => {
             exec("../sim/bot ./binance", (error, stdout, stderr) => {
                 resolve(stdout);
@@ -131,7 +160,7 @@ class Bot {
                     return res;
                 }
             }
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            await new Promise(resolve => setTimeout(resolve, 600));
         }
     }
 
@@ -157,5 +186,9 @@ class Bot {
         return await res.json();
     }
 }
+try {
+    new Bot()
 
-new Bot()
+} catch (error) {
+    notif("ERROR", error);
+}

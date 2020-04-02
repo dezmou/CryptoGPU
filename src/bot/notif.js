@@ -5,10 +5,9 @@ const sendNotification = async (title, message) => {
     const params = {
         token: secrets.notif_token,
         user: secrets.notif_user,
-        html: '1',
-        message: `chien\n<b>chien</b>`,
+        message,
         sound: "cashregister",
-        title: "Trade Bet"
+        title
     }
     let paramsStr = "";
     for (let param of Object.entries(params)) {
