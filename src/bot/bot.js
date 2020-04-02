@@ -3,6 +3,7 @@ const crypto = require("crypto-js");
 const struct = require('python-struct');
 const fs = require("fs");
 const exec = require('child_process').exec;
+const secrets = require("./secret");
 
 const OPEN_TIME = 0;
 const OPEN = 1;
@@ -15,8 +16,8 @@ const NO_BET = 0;
 const BUY = 1;
 const SELL = 2;
 
-const key = "s5PVpvenSY6UC7z5rYYy2dcDbbsWhPAgWl9oTkXygUyBEdsuXpFkyUcY9L8ifrKh";
-const secret = require("./secret");
+const key = secrets.binance_key;
+const secret = secrets.binance_secret;
 const apiUrl = "https://fapi.binance.com";
 
 class Bot {
