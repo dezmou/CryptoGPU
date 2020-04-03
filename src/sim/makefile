@@ -1,3 +1,5 @@
+.PHONY: bot sim
+
 bot: 
 	gcc bot.c analyse.c data.c trade.c -o bot
 

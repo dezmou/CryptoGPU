@@ -8,7 +8,7 @@
 #define FEE_TAKER 0.0004
 #define FEE_MAKER 0.0004
 
-#define LEARN 0
+#define LEARN 1
 
 // #define FEE 0.0000
 
@@ -40,14 +40,14 @@ Broker newBroker(Data data) {
 Potards newPotards() {
     Potards res;
     res.change_before_long = 1.35;
-    res.change_before_long_steps = 10;
+    res.change_before_long_steps = 1;
     res.closeWin = 0.64;
     res.closeLose = 3.55;
     res.period_for_variance = 40;
     res.maxVariance = 17.11;
     if (LEARN) {
         res.change_before_long = randfrom(0.01, 5);
-        res.change_before_long_steps = (long)randfrom(1, 50);
+        // res.change_before_long_steps = (long)randfrom(1, 50);
         res.closeWin = randfrom(0.05, 5);
         res.closeLose = randfrom(0.05, 5);
         res.maxVariance = randfrom(1, 20);
@@ -63,7 +63,7 @@ void closeBet(Broker *broker, Bet *bet, double price) {
     if (bet->type == BUY) {
         // printf("CHENAPAN\n");
         usd = bet->amount * closePrice;
-    } else if (bet->type = SELL) {
+    } else if (bet->type == SELL) {
         usd = bet->amount * (bet->price + (bet->price - closePrice));
     }
     double fee = usd * FEE_MAKER;
@@ -189,7 +189,7 @@ int main() {
         Broker broker = newBroker(data);
         bake(&potard, &broker);
         double roi = broker.bank / broker.nbrBets;
-        if ((broker.bank > maxBank || broker.flatScore > maxFlatLine) && broker.nbrBets > 100 && broker.bank > 0 && broker.flatScore > 4) {
+        // if ((broker.bank > maxBank || broker.flatScore > maxFlatLine) && broker.nbrBets > 100 && broker.bank > 0 && broker.flatScore > 4) {
             // if (broker.flatScore > maxFlatLine && broker.bank > 0 &&
             // broker.nbrBets > 1000) {
             printf(
@@ -202,7 +202,7 @@ int main() {
                 broker.nbrLost, broker.flatScore, potard.maxVariance);
             maxBank = broker.bank;
             maxFlatLine = broker.flatScore;
-        }
+        // }
         if (!LEARN) {
             break;
             fclose(fp);

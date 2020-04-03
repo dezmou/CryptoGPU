@@ -96,16 +96,18 @@ class Bot {
         }, 'GET')
         const resWin = tradeHistory.find(e => e.orderId === winOrder.orderId);
         const resLose = tradeHistory.find(e => e.orderId === loseOrder.orderId);
-        if (resWin.status === 'FILLED') {
+        if (resLose.status === 'CANCELED') {
             sumary.won = true;
             sumary.closeTarget = bet.close_win;
             sumary.closeFilled = resWin.avgPrice;
             notif("WON", `Target : ${bet.close_win}\n Filled : ${resWin.avgPrice}`);
-        } else {
+        } else if (resWin.status === 'CANCELED'){
             sumary.won = false;
             sumary.closeTarget = bet.close_lose;
             sumary.closeFilled = resLose.avgPrice;
             notif("LOST", `Target : ${bet.close_lose}\n Filled : ${resLose.avgPrice}`);
+        } else {
+            notif("ERROR ORDERS", `dunnooo`);
         }
         console.log(sumary);
         this.lastMinute = 0;
