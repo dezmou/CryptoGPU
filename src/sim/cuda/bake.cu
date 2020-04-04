@@ -269,12 +269,12 @@ __global__ void cudaBake(BakeParams *p) {
     bake(&potard, &broker);
     p->brokers[workerNbr] = broker;
     // p->brokers[workerNbr] = broker;
-    printf("THX: %-5d BLX: %-5d THY: %-5d BLY: %-5d\n", threadIdx.x, blockIdx.x, threadIdx.y, blockIdx.y);
+    // printf("THX: %-5d BLX: %-5d THY: %-5d BLY: %-5d\n", threadIdx.x, blockIdx.x, threadIdx.y, blockIdx.y);
     // printMinute(&p->data.minutes[workerNbr]);
 }
 
-#define NBR_THREAD 512
-#define NBR_BLOCK 512
+#define NBR_THREAD 32
+#define NBR_BLOCK 1024
 
 // #define NBR_THREAD 1
 // #define NBR_BLOCK 1
@@ -288,7 +288,7 @@ int main() {
     cudaMallocManaged(&p->brokers, sizeof(Broker) * NBR_BLOCK * NBR_THREAD);
     p->nbrBlocks = NBR_BLOCK;
     p->nbrThreads = NBR_THREAD;
-    p->data = loadMinutes("../../../data/bin/BTCUSDT");
+    p->data = loadMinutes((char*)"../../../data/bin/BTCUSDT");
 
     for (int i = 0; i < NBR_THREAD * NBR_BLOCK; i++) {
         p->potards[i] = newPotards();
@@ -301,7 +301,7 @@ int main() {
         printf("CUDA error: %s\n", cudaGetErrorString(error));
         exit(-1);
     }
-    return 0;
+    // return 0;
     for (int i = 0; i < NBR_THREAD * NBR_BLOCK; i++) {
         printf(
             "BK: %-8.2lf  NB: %-5d CBL: %-8.2lf CBLS: %-8.2ld CLW: %-8.2lf "
