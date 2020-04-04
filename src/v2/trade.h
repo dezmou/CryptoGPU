@@ -60,3 +60,11 @@ typedef struct {
     double bank;
 } Broker;
 
+Broker newBroker(Data data);
+double randfrom(double min, double max);
+Seed plantSeed();
+Data loadMinutes(char *path);
+void printSeed(Seed *seed);
+Seed scanSeed(char *seedStr);
+__host__ __device__ void printMinute(Minute *minute);
+__host__ __device__ void tickBroker(Broker *broker);
