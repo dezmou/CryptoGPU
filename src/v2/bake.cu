@@ -8,8 +8,8 @@ static __global__ void applyTickBroker(Broker *brokers, int cursor) {
     brokers[workerNbr] = broker;
 }
 
-#define TIME_START 700000
-// #define TIME_START 0
+// #define TIME_START 700000
+#define TIME_START 0
 
 static void bake(Data data) {
     int nbrThreads = 128;
@@ -22,7 +22,7 @@ static void bake(Data data) {
     }
     for (int i = TIME_START; i < data.nbrMinutes; i++) {
         if (i % 1000 == 0) {
-            printf("%d / 800000\n", i);
+            printf("%d / 800000  wokers : %d\n", i, nbrWorkers);
         }
         applyTickBroker<<<nbrBlocks, nbrThreads>>>(brokers, i);
     }
@@ -34,8 +34,8 @@ static void bake(Data data) {
     }
 
     for (int i = 0; i < nbrWorkers; i++) {
-        printf("CH: %-12.2lf BK: %-12.2lf\n", brokers[i].seed.chien,
-               brokers[i].bank);
+        printf("BK: %-12.2lf\n\n", brokers[i].bank);
+        printSeed(&brokers[i].seed);
     }
 }
 

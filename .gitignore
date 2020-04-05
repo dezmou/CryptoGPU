@@ -14,3 +14,4 @@ core.so
 res.csv
 secret.js
 *.o
+log

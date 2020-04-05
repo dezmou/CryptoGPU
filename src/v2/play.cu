@@ -9,10 +9,9 @@ int main(int argc, char *argv[]) {
     Data data = loadMinutes(argv[1]);
     Broker broker = newBroker(data);
     broker.seed = scanSeed(argv[2]);
-    // broker.seed.chien = 5000;
+    printSeed(&broker.seed);
     for (int i = 0; i < data.nbrMinutes; i++) {
         broker.cursor = i;
-        // printMinute(&broker.minutes[broker.cursor]);
         tickBroker(&broker);
     }
     return 0;

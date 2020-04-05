@@ -7,12 +7,12 @@ double randfrom(double min, double max) {
 }
 
 void printSeed(Seed *seed) { 
-    printf("CH:%-12.02lf\n", seed->chien); 
+    printf("CH:%-12.02lf CH:%-12.02lf\n", seed->chien, seed->lapin);
 }
 
 Seed scanSeed(char *seedStr){
     Seed seed;
-    sscanf(seedStr,"CH:%lf\n", &seed.chien);
+    sscanf(seedStr,"CH:%lf LP:%lf\n", &seed.chien, &seed.lapin);
     return seed;
 }
 

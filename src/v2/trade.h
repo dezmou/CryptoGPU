@@ -50,7 +50,16 @@ typedef struct {
 
 typedef struct {
     double chien;
+    double lapin;
 } Seed;
+
+typedef struct {
+    int type;
+    double bank;
+    double totalFee;
+    double closeUp;
+    double closeDown;
+} Bet;
 
 typedef struct {
     long cursor;
@@ -58,7 +67,9 @@ typedef struct {
     int nbrMinutes;
     Seed seed;
     double bank;
+    Bet bet;
 } Broker;
+
 
 Broker newBroker(Data data);
 double randfrom(double min, double max);
@@ -68,3 +79,4 @@ void printSeed(Seed *seed);
 Seed scanSeed(char *seedStr);
 __host__ __device__ void printMinute(Minute *minute);
 __host__ __device__ void tickBroker(Broker *broker);
+__host__ __device__ Bet analyse(Minute *minute, Seed *seed);

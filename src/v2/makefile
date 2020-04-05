@@ -1,8 +1,7 @@
+bake: bake.cu broker.cu trade.cu analyse.cu
+	nvcc -dc -D BUILD bake.cu broker.cu trade.cu analyse.cu
+	nvcc bake.o broker.o trade.o analyse.o -o bake
 
-bake: bake.cu broker.cu trade.cu
-	nvcc -dc -D BUILD bake.cu broker.cu trade.cu
-	nvcc -D BUILD bake.o broker.o trade.o -o bake
-
-play : play.cu broker.cu trade.cu
-	nvcc -dc -D BUILD play.cu  broker.cu trade.cu
-	nvcc -D BUILD play.o broker.o trade.o -o play
+play : play.cu broker.cu trade.cu analyse.cu
+	nvcc -dc -D BUILD -D PLAY play.cu  broker.cu trade.cu analyse.cu
+	nvcc play.o broker.o trade.o analyse.o -o play
