@@ -26,6 +26,8 @@ static void bake(Data data) {
         }
         applyTickBroker<<<nbrBlocks, nbrThreads>>>(brokers, i);
     }
+
+    
     cudaDeviceSynchronize();
     cudaError_t error = cudaGetLastError();
     if (error != cudaSuccess) {
@@ -34,7 +36,8 @@ static void bake(Data data) {
     }
 
     for (int i = 0; i < nbrWorkers; i++) {
-        printf("BK: %-12.2lf\n\n", brokers[i].bank);
+        printf("BK: %-8.02lf FEE: %-8.02lf NB: %-5d\n", brokers[i].bank, brokers[i].fees, brokers[i].nbrBets);
+        // printf("BK: %-12.2lf\n\n", brokers[i].bank);
         printSeed(&brokers[i].seed);
     }
 }

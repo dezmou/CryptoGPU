@@ -1,7 +1,7 @@
 #include "trade.h"
 
-#define FEE_TAKER 0.0002
-#define FEE_MAKER 0.0004
+#define FEE_TAKER 0.0004
+#define FEE_MAKER 0.0002
 
 Broker newBroker(Data data) {
     Broker broker;
@@ -10,52 +10,88 @@ Broker newBroker(Data data) {
     broker.nbrMinutes = data.nbrMinutes;
     broker.bank = 0;
     broker.seed = plantSeed();
+    broker.fees = 0;
     broker.bet.type = NO_BET;
     broker.bet.closeDown = 0;
     broker.bet.closeUp = 0;
+    broker.nbrBets = 0;
     return broker;
 }
 
 #define MINUTE broker->minutes[broker->cursor]
 #define SIZE_BET 100
 
-__host__ __device__ static void closeBet(Bet *bet, int isWin) {
-    bet->type = NO_BET;
+__host__ __device__ static void closeBet(Broker *broker, int isWin,
+                                         double diff) {
+    broker->bet.totalFee += SIZE_BET * FEE_TAKER;
+    double gain = SIZE_BET * (isWin == 1 ? diff : -diff);
+    broker->bank += gain;
+    broker->bet.totalFee = (FEE_TAKER * SIZE_BET);
+    if (isWin) {
+        broker->bet.totalFee += (FEE_MAKER * (SIZE_BET + gain));
+    } else {
+        broker->bet.totalFee += (FEE_TAKER * (SIZE_BET + gain));
+    }
+    broker->fees += broker->bet.totalFee;
+    broker->bank += -broker->bet.totalFee;
+    broker->nbrBets += 1;
+
 #ifdef PLAY
-    printf("%4s\n", (isWin == 1 ? "WIN" : "LOSE"));
+    printf(
+        "%s%-4s DIFF: %-5.04lf STH: %-5.04lf STL: %-5.04lf GAIN: "
+        "%-5.04lf FEE :%-8.05lf\n",
+        (isWin == 1 ? "\x1B[32m" : "\x1B[31m"),
+        (broker->bet.type == SELL ? "SELL" : "BUY"), diff, broker->bet.closeUp,
+        broker->bet.closeDown, gain, broker->bet.totalFee);
+    printMinute(&broker->minutes[broker->bet.cursor], broker->bet.cursor);
+    printMinute(&broker->minutes[broker->cursor], broker->cursor);
+    printf("BK: %-8.04lf FEE: %-8.02lf NB: %-5d\n", broker->bank, broker->fees,
+           broker->nbrBets);
+    printf(
+        "\x1B[0m---------------------------------------------------------------"
+        "-------------------------------------------\n");
 #endif
+    broker->bet.type = NO_BET;
 }
 
 __host__ __device__ void tickBroker(Broker *broker) {
     if (broker->bet.type == NO_BET) {
         broker->bet = analyse(&MINUTE, &broker->seed);
         if (broker->bet.type != NO_BET) {
-            broker->bet.bank = -(SIZE_BET / MINUTE.close);
-            double fee = SIZE_BET * FEE_TAKER;
-            broker->bet.bank += -fee;
-            broker->bet.totalFee = fee;
-            // printMinute(&MINUTE);
+            // broker->bet.bank = -(SIZE_BET / MINUTE.close);
+            // double fee = SIZE_BET * FEE_TAKER;
+            // broker->bet.bank += -fee;
+            // broker->bet.totalFee = fee;
+            broker->bet.cursor = broker->cursor;
         }
         return;
     } else if (broker->bet.type == SELL) {
-        if (MINUTE.low < broker->bet.closeDown) {
-            // WIN
-            // printMinute(&MINUTE);
-            // printf("HIGH : %lf CLOSE UP :%lf\n\n", MINUTE.high, broker->bet.closeUp);
-            closeBet(&broker->bet, 1);
-        } else if (MINUTE.high >= broker->bet.closeUp) {
+        if (MINUTE.high >= broker->bet.closeUp) {
+            double diff = fabs((broker->bet.closeUp /
+                                broker->minutes[broker->bet.cursor].close) -
+                               1);
             // LOSE
-            // printMinute(&MINUTE);
-            // printf("HIGH : %lf CLOSE UP :%lf\n\n", MINUTE.high, broker->bet.closeUp);
-            closeBet(&broker->bet, 0);
+            closeBet(broker, 0, diff);
+        } else if (MINUTE.low < broker->bet.closeDown) {
+            // WIN
+            double diff = fabs((broker->bet.closeDown /
+                                broker->minutes[broker->bet.cursor].close) -
+                               1);
+            closeBet(broker, 1, diff);
         }
     } else if (broker->bet.type == BUY) {
-        if (MINUTE.high > broker->bet.closeUp) {
-            // WIN
-            closeBet(&broker->bet, 1);
-        } else if (MINUTE.low <= broker->bet.closeDown) {
+        if (MINUTE.low <= broker->bet.closeDown) {
             // LOSE
-            closeBet(&broker->bet, 0);
+            double diff = fabs((broker->bet.closeDown /
+                                broker->minutes[broker->bet.cursor].close) -
+                               1);
+            closeBet(broker, 0, diff);
+        } else if (MINUTE.high > broker->bet.closeUp) {
+            // WIN
+            double diff = fabs((broker->bet.closeUp /
+                                broker->minutes[broker->bet.cursor].close) -
+                               1);
+            closeBet(broker, 1, diff);
         }
     }
 }

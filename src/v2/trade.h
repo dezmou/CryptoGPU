@@ -55,6 +55,7 @@ typedef struct {
 
 typedef struct {
     int type;
+    long cursor;
     double bank;
     double totalFee;
     double closeUp;
@@ -68,6 +69,8 @@ typedef struct {
     Seed seed;
     double bank;
     Bet bet;
+    double fees;
+    int nbrBets;
 } Broker;
 
 
@@ -77,6 +80,6 @@ Seed plantSeed();
 Data loadMinutes(char *path);
 void printSeed(Seed *seed);
 Seed scanSeed(char *seedStr);
-__host__ __device__ void printMinute(Minute *minute);
+__host__ __device__ void printMinute(Minute *minute, int cursor);
 __host__ __device__ void tickBroker(Broker *broker);
 __host__ __device__ Bet analyse(Minute *minute, Seed *seed);

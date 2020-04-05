@@ -9,6 +9,7 @@ __host__ __device__ void static initBet(Bet *bet, int type, double closeUp,
 
 __host__ __device__ Bet analyse(Minute *minute, Seed *seed) {
     Bet bet;
-    initBet(&bet, SELL, minute->close * 1.05, minute->close * 0.95);
+    // initBet(&bet, SELL, minute->close * 1.01, minute->close * 0.99);
+    initBet(&bet, BUY, minute->close * 1.05, minute->close * 0.95);
     return bet;
 }
