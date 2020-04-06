@@ -23,7 +23,6 @@
 #define SELL 2
 
 #define BROKER_REG_STEP 50000
-#define BAKE_MIN_BETS 500
 
 #ifndef BUILD
     #define __host__
