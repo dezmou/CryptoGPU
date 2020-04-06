@@ -2,7 +2,6 @@
 
 Seed plantSeed() {
     Seed seed;
-    seed.chien = randfrom(5, 14000);
     seed.a = randfrom(0.95, 0.9999);
     seed.b = randfrom(1.001, 1.1);
     seed.c = randfrom(0.95, 0.9999);

@@ -35,9 +35,6 @@
 #endif
 
 typedef struct {
-    double chien;
-    double lapin;
-    
     double a;
     double b;
     double c;
@@ -45,6 +42,15 @@ typedef struct {
     double e;
     double f;
     double g;
+    double h;
+    double i;
+    double j;
+    double k;
+    double l;
+    double m;
+    double n;
+    double o;
+    double p;
     // double 
 } Seed;
 

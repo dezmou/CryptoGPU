@@ -6,19 +6,23 @@ double randfrom(double min, double max) {
     return min + (rand() / div);
 }
 
-#define SEEDSTR "%lf %lf %lf\n"
+#define SEEDSTR \
+    "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf\n"
 #define SEEDPARAMS
 
 void printSeed(Seed *seed) {
-    printf(SEEDSTR, seed->a, seed->b, seed->c);
+    printf(SEEDSTR, seed->a, seed->b, seed->c, seed->d, seed->e, seed->f,
+           seed->g, seed->h, seed->i, seed->j, seed->k, seed->l, seed->m,
+           seed->n, seed->o, seed->p);
 }
 
 Seed scanSeed(char *seedStr) {
     Seed seed;
-    sscanf(seedStr, SEEDSTR, &seed.a, &seed.b, &seed.c);
+    sscanf(seedStr, SEEDSTR, &seed.a, &seed.b, &seed.c, &seed.d, &seed.e,
+           &seed.f, &seed.g, &seed.h, &seed.i, &seed.j, &seed.k, &seed.l,
+           &seed.m, &seed.n, &seed.o, &seed.p);
     return seed;
 }
-
 
 Data loadMinutes(char *path) {
     Data data;
@@ -27,7 +31,7 @@ Data loadMinutes(char *path) {
     fstat(fd, &buf);
     off_t size = buf.st_size;
 #ifdef PLAY
-    data.minutes = (Minute*)malloc(size);
+    data.minutes = (Minute *)malloc(size);
 #endif
 #ifndef PLAY
     cudaMallocManaged(&data.minutes, size);
