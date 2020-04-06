@@ -8,9 +8,6 @@
 #include <time.h>
 #include <unistd.h>
 #include <cuda_runtime.h>
-// maybe you need also helpers
-// #include <helper_cuda.h>
-// #include <helper_functions.h> // helper utility functions 
 
 #define KNRM "\x1B[0m"
 #define KRED "\x1B[31m"
@@ -25,6 +22,9 @@
 #define BUY 1
 #define SELL 2
 
+#define BROKER_REG_STEP 50000
+#define BAKE_MIN_BETS 500
+
 #ifndef BUILD
     #define __host__
     #define __device__
@@ -33,6 +33,20 @@
     #define threadIdx.x 0
     #define blockIdx 0
 #endif
+
+typedef struct {
+    double chien;
+    double lapin;
+    
+    double a;
+    double b;
+    double c;
+    double d;
+    double e;
+    double f;
+    double g;
+    // double 
+} Seed;
 
 typedef struct {
     long time;
@@ -48,10 +62,6 @@ typedef struct {
     Minute *minutes;
 } Data;
 
-typedef struct {
-    double chien;
-    double lapin;
-} Seed;
 
 typedef struct {
     int type;
@@ -71,8 +81,11 @@ typedef struct {
     Bet bet;
     double fees;
     int nbrBets;
+    int reg;
+    int lastRegBank;
 } Broker;
 
+extern FILE *fp;
 
 Broker newBroker(Data data);
 double randfrom(double min, double max);

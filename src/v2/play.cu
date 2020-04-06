@@ -1,16 +1,26 @@
 #include "trade.h"
 
+#define TIME_START 500
+
+FILE *fp;
+
 int main(int argc, char *argv[]) {
+    srand(time(NULL));
+    fp = fopen("res.csv", "w");
+    fprintf(fp, "price, bank, fee\n");
+
     if (argc == 1) {
         printf("argv1 must be path to data binary\n");
-        printf("argv2 must be seed string\n");
         exit(0);
     }
     Data data = loadMinutes(argv[1]);
     Broker broker = newBroker(data);
-    broker.seed = scanSeed(argv[2]);
+    if (argc == 2) {
+    } else {
+        broker.seed = scanSeed(argv[2]);
+    }
     printSeed(&broker.seed);
-    for (int i = 0; i < data.nbrMinutes; i++) {
+    for (int i = TIME_START; i < data.nbrMinutes; i++) {
         broker.cursor = i;
         tickBroker(&broker);
     }

@@ -15,28 +15,34 @@ Broker newBroker(Data data) {
     broker.bet.closeDown = 0;
     broker.bet.closeUp = 0;
     broker.nbrBets = 0;
+    broker.reg = 0;
+    broker.lastRegBank = broker.bank;
     return broker;
 }
 
 #define MINUTE broker->minutes[broker->cursor]
-#define SIZE_BET 100
+#define SIZE_BET 4660
 
-__host__ __device__ static void closeBet(Broker *broker, int isWin,
-                                         double diff) {
+__host__
+#ifndef PLAY
+    __device__
+#endif
+    static void
+    closeBet(Broker *broker, int isWin, double diff) {
     broker->bet.totalFee += SIZE_BET * FEE_TAKER;
     double gain = SIZE_BET * (isWin == 1 ? diff : -diff);
     broker->bank += gain;
     broker->bet.totalFee = (FEE_TAKER * SIZE_BET);
-    if (isWin) {
-        broker->bet.totalFee += (FEE_MAKER * (SIZE_BET + gain));
-    } else {
-        broker->bet.totalFee += (FEE_TAKER * (SIZE_BET + gain));
-    }
+    broker->bet.totalFee +=
+        ((isWin == 1 ? FEE_TAKER : FEE_MAKER) * (SIZE_BET + gain));
     broker->fees += broker->bet.totalFee;
     broker->bank += -broker->bet.totalFee;
     broker->nbrBets += 1;
 
 #ifdef PLAY
+    fprintf(fp, "%lf,%lf,%lf\n", broker->minutes[broker->cursor].close,
+            broker->bank, broker->fees);
+
     printf(
         "%s%-4s DIFF: %-5.04lf STH: %-5.04lf STL: %-5.04lf GAIN: "
         "%-5.04lf FEE :%-8.05lf\n",
@@ -55,13 +61,13 @@ __host__ __device__ static void closeBet(Broker *broker, int isWin,
 }
 
 __host__ __device__ void tickBroker(Broker *broker) {
+    if (broker->cursor % BROKER_REG_STEP == 0){
+        broker->reg += (broker->bank > broker->lastRegBank) ? 1 : -1;
+        broker->lastRegBank = broker->bank;
+    }
     if (broker->bet.type == NO_BET) {
         broker->bet = analyse(&MINUTE, &broker->seed);
         if (broker->bet.type != NO_BET) {
-            // broker->bet.bank = -(SIZE_BET / MINUTE.close);
-            // double fee = SIZE_BET * FEE_TAKER;
-            // broker->bet.bank += -fee;
-            // broker->bet.totalFee = fee;
             broker->bet.cursor = broker->cursor;
         }
         return;

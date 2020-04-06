@@ -6,21 +6,19 @@ double randfrom(double min, double max) {
     return min + (rand() / div);
 }
 
+#define SEEDSTR "%lf %lf %lf\n"
+#define SEEDPARAMS
+
 void printSeed(Seed *seed) {
-    printf("CH:%-12.02lf CH:%-12.02lf\n", seed->chien, seed->lapin);
+    printf(SEEDSTR, seed->a, seed->b, seed->c);
 }
 
 Seed scanSeed(char *seedStr) {
     Seed seed;
-    sscanf(seedStr, "CH:%lf LP:%lf\n", &seed.chien, &seed.lapin);
+    sscanf(seedStr, SEEDSTR, &seed.a, &seed.b, &seed.c);
     return seed;
 }
 
-Seed plantSeed() {
-    Seed seed;
-    seed.chien = randfrom(5, 14000);
-    return seed;
-}
 
 Data loadMinutes(char *path) {
     Data data;
