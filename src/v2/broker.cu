@@ -34,7 +34,7 @@ __host__
     broker->bank += gain;
     broker->bet.totalFee = (FEE_TAKER * SIZE_BET);
     broker->bet.totalFee +=
-        ((isWin == 1 ? FEE_TAKER : FEE_MAKER) * (SIZE_BET + gain));
+        ((isWin == 1 ? FEE_MAKER : FEE_TAKER) * (SIZE_BET + gain));
     broker->fees += broker->bet.totalFee;
     broker->bank += -broker->bet.totalFee;
     broker->nbrBets += 1;

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.js"></script>
+    <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+    <script type="text/javascript">
+
+        $(document).ready(function () {
+            $.ajax({
+                type: "GET",
+                url: "res.csv",
+                dataType: "text",
+                success: function (data) { processData(data); }
+            });
+            function processData(allText) {
+                var allLinesArray = allText.split('\n');
+                if (allLinesArray.length > 0) {
+                    var prices = [];
+                    var bank = [];
+                    var fee = [];
+                    for (var i = 0; i <= allLinesArray.length - 1; i++) {
+                        var rowData = allLinesArray[i].split(',');
+                        if (rowData && rowData.length > 1)
+                            prices.push({ label: rowData[0], y: parseInt(rowData[0]) });
+                            bank.push({ label: rowData[0], y: parseInt(rowData[1]) });
+                            fee.push({ label: rowData[0], y: parseInt(rowData[2]) });
+                    }
+                    chart.options.data[0].dataPoints = prices;
+                    chart.options.data[1].dataPoints = bank;
+                    chart.options.data[2].dataPoints = fee;
+                    chart.render();
+                }
+            }
+            var chart = new CanvasJS.Chart("chartContainer", {
+                theme: "theme2",
+                title: {
+                    text: "gain"
+                },
+                data: [
+                    {
+                        type: "line",
+                        dataPoints: []
+                    },
+                    {
+                        type: "line",
+                        dataPoints: []
+                    },
+                    {
+                        type: "line",
+                        dataPoints: []
+                    }
+                ]
+            });
+        });
+    </script>
+    <script type="text/javascript" src="canvasjs.min.js"></script>
+</head>
+
+<body>
+    <div id="chartContainer" style="height: 800px; width: 100%;"></div>
+</body>
+
+</html>
