@@ -19,23 +19,26 @@
                     var prices = [];
                     var bank = [];
                     var fee = [];
+                    var floor = [];
                     for (var i = 0; i <= allLinesArray.length - 1; i++) {
                         var rowData = allLinesArray[i].split(',');
                         if (rowData && rowData.length > 1)
                             prices.push({ label: rowData[0], y: parseInt(rowData[0]) });
-                            bank.push({ label: rowData[0], y: parseInt(rowData[1]) });
-                            fee.push({ label: rowData[0], y: parseInt(rowData[2]) });
+                        bank.push({ label: rowData[0], y: (parseFloat(rowData[1]) + 1) * 4261 });
+                        fee.push({ label: rowData[0], y: (parseFloat(rowData[2]) + 1) * 4261 });
+                        floor.push({ label: rowData[0], y: 4261 });
                     }
                     chart.options.data[0].dataPoints = prices;
                     chart.options.data[1].dataPoints = bank;
                     chart.options.data[2].dataPoints = fee;
+                    chart.options.data[3].dataPoints = floor;
                     chart.render();
                 }
             }
             var chart = new CanvasJS.Chart("chartContainer", {
                 theme: "theme2",
                 title: {
-                    text: "gain"
+                    text: "simulation"
                 },
                 data: [
                     {
@@ -49,7 +52,12 @@
                     {
                         type: "line",
                         dataPoints: []
+                    },
+                    {
+                        type: "line",
+                        dataPoints: []
                     }
+
                 ]
             });
         });

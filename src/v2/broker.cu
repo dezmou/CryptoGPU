@@ -21,7 +21,7 @@ Broker newBroker(Data data) {
 }
 
 #define MINUTE broker->minutes[broker->cursor]
-#define SIZE_BET 4660
+#define SIZE_BET 1
 
 __host__
 #ifndef PLAY
@@ -66,7 +66,7 @@ __host__ __device__ void tickBroker(Broker *broker) {
         broker->lastRegBank = broker->bank;
     }
     if (broker->bet.type == NO_BET) {
-        broker->bet = analyse(&MINUTE, &broker->seed);
+        analyse(&MINUTE, &broker->seed, &broker->bet);
         if (broker->bet.type != NO_BET) {
             broker->bet.cursor = broker->cursor;
         }

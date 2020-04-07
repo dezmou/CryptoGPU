@@ -23,6 +23,8 @@
 #define SELL 2
 
 #define BROKER_REG_STEP 50000
+#define TIME_START 100000
+
 
 #ifndef BUILD
     #define __host__
@@ -100,4 +102,4 @@ void printSeed(Seed *seed);
 Seed scanSeed(char *seedStr);
 __host__ __device__ void printMinute(Minute *minute, int cursor);
 __host__ __device__ void tickBroker(Broker *broker);
-__host__ __device__ Bet analyse(Minute *minute, Seed *seed);
+__host__ __device__ void analyse(Minute *minute, Seed *seed, Bet *bet);

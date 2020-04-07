@@ -1,7 +1,5 @@
 #include "trade.h"
 
-#define TIME_START 500
-
 FILE *fp;
 
 int main(int argc, char *argv[]) {
