@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.js"></script>
+    <script src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+    <script type="text/javascript">
+
+        $(document).ready(function () {
+            setInterval(() => {
+                $.ajax({
+                    type: "GET",
+                    url: "replay.csv",
+                    dataType: "text",
+                    success: function (data) { processData(data); }
+                });
+
+            }, 200);
+            let lastText = ""
+            function processData(allText) {
+                if (lastText === allText) {
+                    return;
+                }
+                lastText = allText;
+                var allLinesArray = allText.split('\n');
+                if (allLinesArray.length > 0) {
+                    var prices = [];
+                    var bet = [];
+                    var up = [];
+                    var down = [];
+                    for (var i = 0; i <= allLinesArray.length - 1; i++) {
+                        var rowData = allLinesArray[i].split(',');
+                        if (rowData && rowData.length > 1) {
+                            prices.push({ label: rowData[0], y: parseFloat(rowData[0]) });
+                            bet.push({ label: rowData[0], y: parseFloat(rowData[1]) })
+                            up.push({ label: rowData[2], y: parseFloat(rowData[2]) })
+                            down.push({ label: rowData[3], y: parseFloat(rowData[3]) })
+                        }
+                    }
+                    console.log(bet);
+                    var pourc = prices.map(e => {
+                        return {
+                            label: e.label, y: (110 - (prices[1].y / e.y * 100))
+                        }
+                    });
+                    chart.options.data[0].dataPoints = pourc;
+                    
+                    chart.options.data[1].dataPoints = bet.map(e => {
+                        return {
+                            label: e.label, y: (110 - (prices[1].y / e.y * 100))
+                        }
+                    });
+
+                    chart.options.data[2].dataPoints = up.map(e => {
+                        return {
+                            label: e.label, y: (110 - (prices[1].y / e.y * 100))
+                        }
+                    });
+
+                    chart.options.data[3].dataPoints = down.map(e => {
+                        return {
+                            label: e.label, y: (110 - (prices[1].y / e.y * 100))
+                        }
+                    });
+
+
+
+                    chart.render();
+                }
+            }
+            var chart = new CanvasJS.Chart("chartContainer", {
+                theme: "theme2",
+                title: {
+                    text: "bet"
+                },
+                data: [
+                    {
+                        type: "line",
+                        dataPoints: []
+                    },
+                    {
+                        type: "line",
+                        dataPoints: []
+                    },
+                    {
+                        type: "line",
+                        dataPoints: []
+                    },
+                    {
+                        type: "line",
+                        dataPoints: []
+                    },
+
+
+                ]
+            });
+        });
+    </script>
+</head>
+
+<body>
+    <div id="chartContainer" style="height: 800px; width: 100%;"></div>
+</body>
+
+</html>

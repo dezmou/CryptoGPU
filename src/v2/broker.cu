@@ -56,12 +56,16 @@ __host__
     printf(
         "\x1B[0m---------------------------------------------------------------"
         "-------------------------------------------\n");
+
+#endif
+#ifdef REPLAY
+    getchar();
 #endif
     broker->bet.type = NO_BET;
 }
 
 __host__ __device__ void tickBroker(Broker *broker) {
-    if (broker->cursor % BROKER_REG_STEP == 0){
+    if (broker->cursor % BROKER_REG_STEP == 0) {
         broker->reg += (broker->bank > broker->lastRegBank) ? 1 : -1;
         broker->lastRegBank = broker->bank;
     }
@@ -69,6 +73,20 @@ __host__ __device__ void tickBroker(Broker *broker) {
         analyse(&MINUTE, &broker->seed, &broker->bet);
         if (broker->bet.type != NO_BET) {
             broker->bet.cursor = broker->cursor;
+
+#ifdef REPLAY
+            FILE *f = fopen("replay.csv", "w");
+            fprintf(f, "price, bet, up, down\n");
+            for (int i = broker->bet.cursor - 100; i < broker->cursor + 100;
+                 i++) {
+                fprintf(f, "%lf,%lf,%lf,%lf\n", broker->minutes[i].close,
+                        (i <= broker->bet.cursor)
+                            ? broker->minutes[broker->bet.cursor].close
+                            : 0,
+                        broker->bet.closeUp, broker->bet.closeDown);
+            }
+            fclose(f);
+#endif
         }
         return;
     } else if (broker->bet.type == SELL) {
