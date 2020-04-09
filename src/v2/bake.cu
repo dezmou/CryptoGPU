@@ -3,7 +3,6 @@
 #include "broker.cu"
 #include "trade.cu"
 #include "analyse.cu"
-  
 
 static __global__ void applyTickBroker(Broker *brokers, int cursor) {
     int workerNbr = threadIdx.x + blockIdx.x * blockDim.x;
@@ -30,7 +29,7 @@ static void bake(Data data) {
     Broker *brokers;
     cudaMallocManaged(&brokers, sizeof(Broker) * nbrWorkers);
     double maxBank = -999999999;
-    double maxReg = 8;
+    // double maxReg = 8;
     int totalMinutes = 0;
     long long timeStart = current_timestamp();
     for (int chien = 0; chien < 100000; chien++) {
@@ -73,7 +72,7 @@ static void bake(Data data) {
                        brokers[i].bank, brokers[i].fees, brokers[i].nbrBets,
                        regScore);
                 maxBank = brokers[i].bank;
-                maxReg = brokers[i].reg;
+                // maxReg = brokers[i].reg;
             }
         }
         // printf("DONE\n");

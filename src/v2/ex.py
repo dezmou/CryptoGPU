@@ -3,6 +3,7 @@ import struct
 with open("ETH_USDT.csv", "r") as f:
     final = ""
     with open("ETHUSDT", "wb") as ff:
+        i = 0
         for line in f.read().split("\n")[1:]:
             if (line == ""):
                 break
@@ -13,4 +14,9 @@ with open("ETH_USDT.csv", "r") as f:
             low = float(data[3])
             close = float(data[4])
             volume = float(data[5])
-            ff.write(struct.pack("qddddd", time, open, high, low, close,volume))
+            if (open == close):
+                print("{}CHIEN".format(i))
+            else:
+                print("{}      CHIEN".format(i))
+            i += 1
+            # ff.write(struct.pack("qddddd", time, open, high, low, close,volume))

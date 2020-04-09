@@ -26,7 +26,15 @@
 #define SELL 2
 
 #define BROKER_REG_STEP 50000
-#define TIME_START 500
+#define TIME_START 150000
+
+#ifndef PLAY
+#define DEVICE __device__
+#endif
+
+#ifdef PLAY
+#define DEVICE __host__
+#endif
 
 #ifndef BUILD
 #define __host__
@@ -36,6 +44,7 @@
 #define threadIdx .x 0
 #define blockIdx 0
 #endif
+
 
 typedef struct {
     double a;
@@ -101,8 +110,27 @@ Seed plantSeed();
 Data loadMinutes(char *path);
 void printSeed(Seed *seed);
 Seed scanSeed(char *seedStr);
-__host__ __device__ void printMinute(Minute *minute, int cursor);
-__host__ __device__ void tickBroker(Broker *broker);
-__host__ __device__ void analyse(Minute *minute, Seed *seed, Bet *bet);
+
+#ifdef PLAY
+    __host__
+#endif
+#ifndef PLAY
+    __device__
+#endif
+ void printMinute(Minute *minute, int cursor);
+#ifdef PLAY
+    __host__
+#endif
+#ifndef PLAY
+    __device__
+#endif
+ void tickBroker(Broker *broker);
+#ifdef PLAY
+    __host__
+#endif
+#ifndef PLAY
+    __device__
+#endif
+ void analyse(Minute *minute, Seed *seed, Bet *bet);
 
 #endif

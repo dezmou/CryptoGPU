@@ -23,12 +23,7 @@ Broker newBroker(Data data) {
 #define MINUTE broker->minutes[broker->cursor]
 #define SIZE_BET 1
 
-__host__
-#ifndef PLAY
-    __device__
-#endif
-    static void
-    closeBet(Broker *broker, int isWin, double diff) {
+DEVICE static void closeBet(Broker *broker, int isWin, double diff) {
     broker->bet.totalFee += SIZE_BET * FEE_TAKER;
     double gain = SIZE_BET * (isWin == 1 ? diff : -diff);
     broker->bank += gain;
@@ -38,8 +33,6 @@ __host__
     broker->fees += broker->bet.totalFee;
     broker->bank += -broker->bet.totalFee;
     broker->nbrBets += 1;
-
-
 
 #ifdef PLAY
     // fprintf(fp, "%lf,%lf,%lf\n", broker->minutes[broker->cursor].close,
@@ -66,7 +59,7 @@ __host__
     broker->bet.type = NO_BET;
 }
 
-__host__ __device__ void tickBroker(Broker *broker) {
+DEVICE void tickBroker(Broker *broker) {
     if (broker->cursor % BROKER_REG_STEP == 0) {
         broker->reg += (broker->bank > broker->lastRegBank) ? 1 : -1;
         broker->lastRegBank = broker->bank;
