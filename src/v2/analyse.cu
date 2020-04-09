@@ -1,18 +1,43 @@
 #include "trade.h"
 
+// 0.517219 0.178939 1.065050 0.987929 1.234249 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000
+// 0.849640 0.001358 1.068678 0.962473 1.121986 0.000000 0.000000 0.000000 1.190795 0.000000 0.242834 0.000000 0.000000 0.000000 0.990490 0.000000
+// 0.370637 0.147151 1.054269 0.981191 0.868640 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000
+
+// 2%
+// 0.478204 0.004966 1.052160 0.981566 0.581564 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000
+
+
 Seed plantSeed() {
     Seed seedRes;
     Seed *seed = &seedRes;
-#define S_LONG_BACK seed->a
-    S_LONG_BACK = randfrom(2, 5);
-#define S_MIN_TREND_UP seed->b
-    S_MIN_TREND_UP = randfrom(0.1, 0.9);
-#define S_MIN_LONG_CHANGE seed->c
-    S_MIN_LONG_CHANGE = randfrom(0.001, 0.1);
-#define S_STOP_UP_X_CHANGE seed->d
-    S_STOP_UP_X_CHANGE = randfrom(0.1, 2);
-#define S_STOP_DOWN_X_CHANGE seed->e
-    S_STOP_DOWN_X_CHANGE = randfrom(0.1, 2);
+#define S_MIN_FIRST_CHANGE seed->a
+    S_MIN_FIRST_CHANGE = randfrom(0.3, 6);
+#define S_MIN_LAST_CHANGE seed->b
+    S_MIN_LAST_CHANGE = randfrom(-1, 3);
+#define S_TOP_HIGH seed->c
+    S_TOP_HIGH = randfrom(1.001, 1.2);
+#define S_STOP_LOW seed->d
+    S_STOP_LOW = randfrom(0.95, 0.999);
+#define S_FIRST_CHANGE_SIZE seed->e
+    S_FIRST_CHANGE_SIZE = randfrom(0.50, 2);
+
+    // S_MIN_FIRST_CHANGE = randfrom(0.50, 0.52);
+    // S_MIN_LAST_CHANGE = randfrom(1.15, 0.17);
+    // S_TOP_HIGH = randfrom(1.05, 1.07);
+    // S_STOP_LOW = randfrom(0.975, 0.999);
+
+
+    // S_MIN_FIRST_CHANGE = randfrom(0.75, 1);
+    // S_MIN_LAST_CHANGE = randfrom(0.0001, 0.003);
+    // S_TOP_HIGH = randfrom(1.04, 1.09);
+    // S_STOP_LOW = randfrom(0.94, 0.98);
+    // S_FIRST_CHANGE_SIZE = randfrom(0.90, 1.4);
+    
+    // S_MIN_FIRST_CHANGE = 0.85;
+    // S_TOP_HIGH = 1.064;
+    // S_STOP_LOW = 0.962;
+
 
     return seedRes;
 }
@@ -26,50 +51,28 @@ __host__ __device__ void static initBet(Bet *bet, int type, double closeUp,
 
 __host__ __device__ void analyse(Minute *minute, Seed *seed, Bet *bet) {
     bet->type = NO_BET;
-
-    // double totalChange
-    double amountDown = 0;
-    double amountUp = 0;
-    for (int i = -((int)S_LONG_BACK); i < 0; i++) {
-        if (minute[i].open < minute[i + 1].open) {
-            amountUp += minute[i + 1].open / minute[i].open;
-        } else if (minute[i].open > minute[i + 1].open) {
-            amountDown += minute[i].open / minute[i + 1].open;
+    double first_change = (1 - minute[-1].open / minute[-1].close) * 100;
+    double last_change = (1 - minute[0].open / minute[0].close) * 100;
+    if (first_change > S_MIN_FIRST_CHANGE) {
+        if (last_change > S_MIN_LAST_CHANGE && last_change < first_change * S_FIRST_CHANGE_SIZE) {
+            initBet(bet, SELL, minute->close * S_TOP_HIGH,
+                    minute->close * S_STOP_LOW);
         }
     }
-    double tendenceUp = (amountUp - amountDown) / (int)S_LONG_BACK;
-    if (tendenceUp > S_MIN_TREND_UP) {
-        double change = (minute->close / (minute[-(int)S_LONG_BACK].close)) - 1;
-        if (change >= S_MIN_LONG_CHANGE) {
+    // printf("FIRST CHANGE: %-10.3lf LAST CHANGE: %-10.3lf\n", first_change,
+    // last_change);
 
-            // printf(
-            //     "BAK : %-10.2lf CUR: %-10.2lf   UP: %-10.2lf DOW: %-10.2lf TD: "
-            //     "%-10.2lf LB: %ld CH: %-4.4lf\n",
-            //     minute[-(int)S_LONG_BACK].close, minute->close, amountUp,
-            //     amountDown, tendenceUp, (long)S_LONG_BACK, change);
 
-            initBet(
-                bet, SELL,
-                ((change * S_STOP_UP_X_CHANGE) * minute->close) + minute->close,
-                ((change * S_STOP_DOWN_X_CHANGE) * -minute->close) +
-                    minute->close);
-        }
-
-        // if (change >= S_MIN_LONG_CHANGE) {
-        //     initBet(bet, SELL, minute->close * seed->b,
-        //             minute->close * seed->c);
-        // }
-    }
-
-    // // double up = minute[-S_LONG_BACK].close
-    // // exit(0);
-    // if (minute[-3].close / minute[0].close < seed->a) {
-    //     initBet(bet, SELL, minute->close * seed->b, minute->close * seed->c);
-    // }
-    // // if ((int)minute->close % 2 == 0) {
-    // //     initBet(&bet, SELL, minute->close * 1.01, minute->close * 0.99);
-    // // } else {
-    // //     initBet(&bet, BUY, minute->close * 1.05, minute->close * 0.95);
-    // // }
-    // // return bet;
 }
+
+// // double up = minute[-S_LONG_BACK].close
+// // exit(0);
+// if (minute[-3].close / minute[0].close < seed->a) {
+//     initBet(bet, SELL, minute->close * seed->b, minute->close * seed->c);
+// }
+// // if ((int)minute->close % 2 == 0) {
+// //     initBet(&bet, SELL, minute->close * 1.01, minute->close * 0.99);
+// // } else {
+// //     initBet(&bet, BUY, minute->close * 1.05, minute->close * 0.95);
+// // }
+// // return bet;

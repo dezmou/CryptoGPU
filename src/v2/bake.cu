@@ -8,6 +8,7 @@ static __global__ void applyTickBroker(Broker *brokers, int cursor) {
 
 // #define TIME_START 700000
 #define BAKE_MIN_BETS 500
+#define STEP_REG 50000
 
 long long current_timestamp() {
     struct timeval te;
@@ -18,7 +19,7 @@ long long current_timestamp() {
 }
 
 static void bake(Data data) {
-    int nbrThreads = 128;
+    int nbrThreads = 64;
     int nbrBlocks = 64;
     int nbrWorkers = nbrThreads * nbrBlocks;
     Broker *brokers;
@@ -26,17 +27,21 @@ static void bake(Data data) {
     double maxBank = -999999999;
     double maxReg = 8;
     int totalMinutes = 0;
+    long long timeStart = current_timestamp();
     for (int chien = 0; chien < 100000; chien++) {
         for (int i = 0; i < nbrWorkers; i++) {
             brokers[i] = newBroker(data);
         }
-        long long timeStart = current_timestamp();
+        double nbrReg = 0;
+        
         for (int i = TIME_START; i < data.nbrMinutes; i++) {
             totalMinutes += 1;
-            if (totalMinutes == 50000) {
-                printf("perf: %lf\n",
-                       (double)nbrWorkers /
-                           (double)(current_timestamp() - timeStart));
+            if (totalMinutes % BROKER_REG_STEP == 0) {
+                nbrReg += 1;
+                // printf("perf: %lf\n",
+                //        (double)nbrWorkers /
+                //            (double)(current_timestamp() - timeStart));
+                timeStart = current_timestamp();
             }
             // if (i % 100000 == 0) {
             //     printf("%d / 1300000  wokers : %d\n", i, nbrWorkers);
@@ -51,14 +56,16 @@ static void bake(Data data) {
         }
         for (int i = 0; i < nbrWorkers; i++) {
             // printf("BK: %-12.2lf\n\n", brokers[i].bank);
-            if (brokers[i].bank > (maxBank * 0.95) && brokers[i].reg >= 10 &&
+            double regScore = brokers[i].reg / nbrReg * 100;
+            if (brokers[i].bank > maxBank &&
+                regScore > 92 &&
                 brokers[i].nbrBets > BAKE_MIN_BETS) {
                 // if (brokers[i].bank > 0 && brokers[i].reg >= maxReg &&
                 // brokers[i].nbrBets > BAKE_MIN_BETS) {
                 printSeed(&brokers[i].seed);
-                printf("BK: %-8.02lf FEE: %-8.02lf NB: %-5d REG: %-5d\n\n",
+                printf("BK: %-8.02lf FEE: %-8.02lf NB: %-5d REG: %-5.3lf\n\n",
                        brokers[i].bank, brokers[i].fees, brokers[i].nbrBets,
-                       brokers[i].reg);
+                       regScore);
                 maxBank = brokers[i].bank;
                 maxReg = brokers[i].reg;
             }

@@ -21,6 +21,10 @@ int main(int argc, char *argv[]) {
     for (int i = TIME_START; i < data.nbrMinutes; i++) {
         broker.cursor = i;
         tickBroker(&broker);
+        if (i % 50 == 0) {
+            fprintf(fp, "%lf,%lf,%lf\n", broker.minutes[broker.cursor].close,
+                    broker.bank, broker.fees);
+        }
     }
     return 0;
 }

@@ -39,9 +39,11 @@ __host__
     broker->bank += -broker->bet.totalFee;
     broker->nbrBets += 1;
 
+
+
 #ifdef PLAY
-    fprintf(fp, "%lf,%lf,%lf\n", broker->minutes[broker->cursor].close,
-            broker->bank, broker->fees);
+    // fprintf(fp, "%lf,%lf,%lf\n", broker->minutes[broker->cursor].close,
+    //         broker->bank, broker->fees);
 
     printf(
         "%s%-4s DIFF: %-5.04lf STH: %-5.04lf STL: %-5.04lf GAIN: "
@@ -77,7 +79,7 @@ __host__ __device__ void tickBroker(Broker *broker) {
 #ifdef REPLAY
             FILE *f = fopen("replay.csv", "w");
             fprintf(f, "price, bet, up, down\n");
-            for (int i = broker->bet.cursor - 100; i < broker->cursor + 100;
+            for (int i = broker->bet.cursor - 40; i < broker->cursor + 100;
                  i++) {
                 fprintf(f, "%lf,%lf,%lf,%lf\n", broker->minutes[i].close,
                         (i <= broker->bet.cursor)

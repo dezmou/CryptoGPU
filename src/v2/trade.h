@@ -23,7 +23,7 @@
 #define SELL 2
 
 #define BROKER_REG_STEP 50000
-#define TIME_START 100000
+#define TIME_START 290000
 
 
 #ifndef BUILD
