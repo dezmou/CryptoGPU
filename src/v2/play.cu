@@ -1,4 +1,7 @@
 #include "trade.h"
+#include "broker.cu"
+#include "trade.cu"
+#include "analyse.cu"
 
 FILE *fp;
 

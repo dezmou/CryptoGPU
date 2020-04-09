@@ -1,3 +1,7 @@
+#ifndef TRADE_H
+#define TRADE_H
+
+#include <cuda_runtime.h>
 #include <fcntl.h>
 #include <math.h>
 #include <stdio.h>
@@ -7,7 +11,6 @@
 #include <sys/time.h>
 #include <time.h>
 #include <unistd.h>
-#include <cuda_runtime.h>
 
 #define KNRM "\x1B[0m"
 #define KRED "\x1B[31m"
@@ -25,14 +28,13 @@
 #define BROKER_REG_STEP 50000
 #define TIME_START 500
 
-
 #ifndef BUILD
-    #define __host__
-    #define __device__
-    #define __global__
-    #define blockDim.x 0
-    #define threadIdx.x 0
-    #define blockIdx 0
+#define __host__
+#define __device__
+#define __global__
+#define blockDim .x 0
+#define threadIdx .x 0
+#define blockIdx 0
 #endif
 
 typedef struct {
@@ -52,7 +54,7 @@ typedef struct {
     double n;
     double o;
     double p;
-    // double 
+    // double
 } Seed;
 
 typedef struct {
@@ -68,7 +70,6 @@ typedef struct {
     int nbrMinutes;
     Minute *minutes;
 } Data;
-
 
 typedef struct {
     int type;
@@ -103,3 +104,5 @@ Seed scanSeed(char *seedStr);
 __host__ __device__ void printMinute(Minute *minute, int cursor);
 __host__ __device__ void tickBroker(Broker *broker);
 __host__ __device__ void analyse(Minute *minute, Seed *seed, Bet *bet);
+
+#endif

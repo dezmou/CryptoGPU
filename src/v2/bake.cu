@@ -1,5 +1,10 @@
 #include "trade.h"
 
+#include "broker.cu"
+#include "trade.cu"
+#include "analyse.cu"
+  
+
 static __global__ void applyTickBroker(Broker *brokers, int cursor) {
     int workerNbr = threadIdx.x + blockIdx.x * blockDim.x;
     brokers[workerNbr].cursor = cursor;
@@ -19,7 +24,7 @@ long long current_timestamp() {
 }
 
 static void bake(Data data) {
-    int nbrThreads = 64;
+    int nbrThreads = 128;
     int nbrBlocks = 64;
     int nbrWorkers = nbrThreads * nbrBlocks;
     Broker *brokers;
@@ -34,13 +39,14 @@ static void bake(Data data) {
         }
         double nbrReg = 0;
         
+
         for (int i = TIME_START; i < data.nbrMinutes; i++) {
             totalMinutes += 1;
             if (totalMinutes % BROKER_REG_STEP == 0) {
                 nbrReg += 1;
-                // printf("perf: %lf\n",
-                //        (double)nbrWorkers /
-                //            (double)(current_timestamp() - timeStart));
+                printf("perf: %lf\n",
+                       (double)nbrWorkers /
+                           (double)(current_timestamp() - timeStart));
                 timeStart = current_timestamp();
             }
             // if (i % 100000 == 0) {

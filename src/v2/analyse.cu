@@ -56,6 +56,8 @@ Seed plantSeed() {
     return seedRes;
 }
 
+
+
 __host__ __device__ void static initBet(Bet *bet, int type, double closeUp,
                                         double closeDown) {
     bet->type = type;
