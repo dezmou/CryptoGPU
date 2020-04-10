@@ -26,7 +26,7 @@
 #define SELL 2
 
 #define BROKER_REG_STEP 50000
-#define TIME_START 150000
+#define TIME_START 300000
 
 #ifndef PLAY
 #define DEVICE __device__
@@ -111,26 +111,8 @@ Data loadMinutes(char *path);
 void printSeed(Seed *seed);
 Seed scanSeed(char *seedStr);
 
-#ifdef PLAY
-    __host__
-#endif
-#ifndef PLAY
-    __device__
-#endif
- void printMinute(Minute *minute, int cursor);
-#ifdef PLAY
-    __host__
-#endif
-#ifndef PLAY
-    __device__
-#endif
- void tickBroker(Broker *broker);
-#ifdef PLAY
-    __host__
-#endif
-#ifndef PLAY
-    __device__
-#endif
- void analyse(Minute *minute, Seed *seed, Bet *bet);
+DEVICE void printMinute(Minute *minute, int cursor);
+DEVICE void tickBroker(Broker *broker);
+DEVICE void analyse(Minute *minute, Seed *seed, Bet *bet);
 
 #endif

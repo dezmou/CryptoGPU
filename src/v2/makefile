@@ -4,6 +4,6 @@ bake: bake.cu broker.cu trade.cu analyse.cu trade.h
 play : play.cu broker.cu trade.cu analyse.cu trade.h
 	nvcc -D BUILD -D PLAY play.cu -o play
 
-play : play.cu broker.cu trade.cu analyse.cu trade.h
+replay : play.cu broker.cu trade.cu analyse.cu trade.h
 	nvcc -D BUILD -D PLAY -D REPLAY play.cu -o replay
 

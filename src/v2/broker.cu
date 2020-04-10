@@ -72,7 +72,7 @@ DEVICE void tickBroker(Broker *broker) {
 #ifdef REPLAY
             FILE *f = fopen("replay.csv", "w");
             fprintf(f, "price, bet, up, down\n");
-            for (int i = broker->bet.cursor - 40; i < broker->cursor + 100;
+            for (int i = broker->bet.cursor - 400; i < broker->cursor + 100;
                  i++) {
                 fprintf(f, "%lf,%lf,%lf,%lf\n", broker->minutes[i].close,
                         (i <= broker->bet.cursor)

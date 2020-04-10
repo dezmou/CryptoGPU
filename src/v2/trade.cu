@@ -45,7 +45,7 @@ Data loadMinutes(char *path) {
     return data;
 }
 
-__host__ __device__ void printMinute(Minute *minute, int cursor) {
+DEVICE void printMinute(Minute *minute, int cursor) {
     if (cursor != -1) {
         printf("~> %-6d | ", cursor + 2);
     }

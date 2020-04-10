@@ -11,7 +11,7 @@ static __global__ void applyTickBroker(Broker *brokers, int cursor) {
 }
 
 // #define TIME_START 700000
-#define BAKE_MIN_BETS 500
+#define BAKE_MIN_BETS 200
 #define STEP_REG 50000
 
 long long current_timestamp() {
@@ -43,9 +43,9 @@ static void bake(Data data) {
             totalMinutes += 1;
             if (totalMinutes % BROKER_REG_STEP == 0) {
                 nbrReg += 1;
-                printf("perf: %lf\n",
-                       (double)nbrWorkers /
-                           (double)(current_timestamp() - timeStart));
+                // fprintf(stderr,"perf: %lf\n",
+                //        (double)nbrWorkers /
+                //            (double)(current_timestamp() - timeStart));
                 timeStart = current_timestamp();
             }
             // if (i % 100000 == 0) {
@@ -63,7 +63,7 @@ static void bake(Data data) {
             // printf("BK: %-12.2lf\n\n", brokers[i].bank);
             double regScore = brokers[i].reg / nbrReg * 100;
             if (brokers[i].bank > maxBank &&
-                regScore > 92 &&
+                regScore > 90 &&
                 brokers[i].nbrBets > BAKE_MIN_BETS) {
                 // if (brokers[i].bank > 0 && brokers[i].reg >= maxReg &&
                 // brokers[i].nbrBets > BAKE_MIN_BETS) {
@@ -75,7 +75,7 @@ static void bake(Data data) {
                 // maxReg = brokers[i].reg;
             }
         }
-        // printf("DONE\n");
+        // fprintf(stderr, "DONE\n");
     }
 }
 
