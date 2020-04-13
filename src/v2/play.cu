@@ -15,6 +15,7 @@ int main(int argc, char *argv[]) {
         exit(0);
     }
     Data data = loadMinutes(argv[1]);
+    return 0;
     Broker broker = newBroker(data);
     if (argc == 2) {
     } else {

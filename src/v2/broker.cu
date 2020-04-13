@@ -59,6 +59,17 @@ DEVICE static void closeBet(Broker *broker, int isWin, double diff) {
     broker->bet.type = NO_BET;
 }
 
+DEVICE void printCandles(Minute *minute, int amount) {
+    FILE *f = fopen("replay.csv", "w");
+    fprintf(f, "Date,Open,High,Low,Close,Volume\n");
+    for (int i = 0; i < amount; i++) {
+        fprintf(f, "%ld,%lf,%lf,%lf,%lf,%lf\n", minute[i].time,minute[i].open,
+                minute[i].high, minute[i].low, minute[i].close,
+                minute[i].volume);
+    }
+    fclose(f);
+}
+
 DEVICE void tickBroker(Broker *broker) {
     if (broker->cursor % BROKER_REG_STEP == 0) {
         broker->reg += (broker->bank > broker->lastRegBank) ? 1 : -1;
@@ -70,17 +81,22 @@ DEVICE void tickBroker(Broker *broker) {
             broker->bet.cursor = broker->cursor;
 
 #ifdef REPLAY
-            FILE *f = fopen("replay.csv", "w");
-            fprintf(f, "price, bet, up, down\n");
-            for (int i = broker->bet.cursor - 400; i < broker->cursor + 100;
-                 i++) {
-                fprintf(f, "%lf,%lf,%lf,%lf\n", broker->minutes[i].close,
-                        (i <= broker->bet.cursor)
-                            ? broker->minutes[broker->bet.cursor].close
-                            : 0,
-                        broker->bet.closeUp, broker->bet.closeDown);
-            }
-            fclose(f);
+            // FILE *f = fopen("replay.csv", "w");
+            // fprintf(f, "price, bet, up, down\n");
+            // for (int i = broker->bet.cursor - 400; i < broker->cursor + 100;
+            //      i++) {
+            //     fprintf(f, "%lf,%lf,%lf,%lf\n", broker->minutes[i].close,
+            //             (i <= broker->bet.cursor)
+            //                 ? broker->minutes[broker->bet.cursor].close
+            //                 : 0,
+            //             broker->bet.closeUp, broker->bet.closeDown);
+            // }
+            // fclose(f);
+            broker->minutes[broker->cursor].low += -200;
+            broker->minutes[broker->cursor].high += 200;
+            printCandles(&broker->minutes[broker->cursor-200], 400);
+            broker->minutes[broker->cursor].low += 200;
+            broker->minutes[broker->cursor].high += -200;
 #endif
         }
         return;

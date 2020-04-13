@@ -63,7 +63,7 @@ static void bake(Data data) {
             // printf("BK: %-12.2lf\n\n", brokers[i].bank);
             double regScore = brokers[i].reg / nbrReg * 100;
             if (brokers[i].bank > maxBank &&
-                regScore > 90 &&
+                regScore > 97 &&
                 brokers[i].nbrBets > BAKE_MIN_BETS) {
                 // if (brokers[i].bank > 0 && brokers[i].reg >= maxReg &&
                 // brokers[i].nbrBets > BAKE_MIN_BETS) {

@@ -26,7 +26,7 @@
 #define SELL 2
 
 #define BROKER_REG_STEP 50000
-#define TIME_START 300000
+#define TIME_START 10
 
 #ifndef PLAY
 #define DEVICE __device__
@@ -76,8 +76,19 @@ typedef struct {
 } Minute;
 
 typedef struct {
+    long time;
+    double open;
+    double high;
+    double low;
+    double close;
+    double volume;
+    double avgCandle;
+} Line;
+
+typedef struct {
     int nbrMinutes;
     Minute *minutes;
+    Line *line;
 } Data;
 
 typedef struct {

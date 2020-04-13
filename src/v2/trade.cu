@@ -24,6 +24,44 @@ Seed scanSeed(char *seedStr) {
     return seed;
 }
 
+DEVICE void printMinute2(Line *line, int cursor) {
+    if (cursor != -1) {
+        printf("~> %-6d | ", cursor + 2);
+    }
+    printf(
+        "%ld OPEN: %-10.5lf HIGH: %-10.5lf LOW: %-10.5lf CLOSE: %-10.5lf "
+        "AVG_C: %-10.5lf\n",
+        line->time, line->open, line->high, line->low, line->close,
+        line->avgCandle);
+}
+
+void createIndicators(Data *data) {
+#ifdef PLAY
+    data->line = (Line *)malloc(sizeof(Line) * data->nbrMinutes);
+#endif
+#ifndef PLAY
+    cudaMallocManaged(&data->line, sizeof(Line) * data->nbrMinutes);
+#endif
+    for (int i = 0; i < data->nbrMinutes; i++) {
+        double avg = -1;
+
+        if (i > 1405) {
+            double totalCandleSize = 0;
+            int nbrCandles = 0;
+            for (int j = i - 150; j < i - 10; j++) {
+                // &data->minutes[j];
+                nbrCandles += 1;
+                totalCandleSize +=
+                    fabs((data->minutes[j].open - data->minutes[j].close));
+            }
+            avg = totalCandleSize / nbrCandles;
+        }
+        memcpy(&data->line[i], &data->minutes[i], sizeof(Minute));
+        data->line[i].avgCandle = avg;
+        printMinute2(&data->line[i], i);
+    }
+}
+
 Data loadMinutes(char *path) {
     Data data;
     int fd = open(path, O_RDONLY);
@@ -42,6 +80,7 @@ Data loadMinutes(char *path) {
         exit(0);
     }
     data.nbrMinutes = size / sizeof(Minute);
+    createIndicators(&data);
     return data;
 }
 
