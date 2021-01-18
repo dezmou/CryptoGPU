@@ -14,6 +14,6 @@
 
 ## Then I look what happened in the futur of the match and try to find redundant pattern to define the bot strategy.
 
-Spoiler, it does not work at all, the futur of the match are totaly random 
+Spoiler, it does not work at all, the futur of the match are totaly random, maybe cryptocurrency prices aren't predictible without a college degree
 
 
