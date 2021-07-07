@@ -22,6 +22,20 @@ typedef struct {
     Minute *minutes;
 } Data;
 
+typedef struct {
+    long seed; 
+    long res;
+} Worker;
+
+__global__ void bake(Data data, Worker *workers) {
+    int workerNbr = threadIdx.x + blockIdx.x * blockDim.x;
+    for (int i =0; i < data.nbrMinutes; i++){
+        if (data.minutes[i].open > workers[workerNbr].seed){
+            workers[workerNbr].res = 1;
+        }
+    }
+}
+
 Data loadMinutes(char *path) {
     Data data;
     int fd = open(path, O_RDONLY);
@@ -46,6 +60,29 @@ void printMinute(Minute *minute) {
 
 int main(){
     Data data = loadMinutes("./data");
+
+    int nbrX = 512;
+    int nbrY = 512;
+    int nbrThreads = nbrX * nbrY;
+
+    Worker *workers;
+    cudaMallocManaged(&workers, nbrThreads * sizeof(Worker));
+    for (int i=0; i < nbrThreads; i++){
+        workers[i].seed = (double)i;
+    }
+
+    bake<<<512, 512>>>(data, workers);
+    cudaDeviceSynchronize();
+    cudaError_t error = cudaGetLastError();
+    if (error != cudaSuccess) {
+        printf("CUDA error: %s\n", cudaGetErrorString(error));
+        exit(-1);
+    }
+
+    for (int i=0; i < nbrThreads; i++){
+        printf("%ld\n", workers[i].res);
+    }
+
     printMinute(&data.minutes[0]);
     return 0;
 }

@@ -5,7 +5,8 @@ import struct
 with open("all.csv", "r") as f:
     final = ""
     with open("data", "wb") as ff:
-        lines = f.read().split("\n")
+        lines = f.read().split("\n")[:1]
+        lines.reverse()
         for i in range(0, len(lines)):
             line = lines[i]
             try:
