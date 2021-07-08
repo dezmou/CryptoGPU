@@ -8,7 +8,8 @@
 #include <time.h>
 #include <unistd.h>
 
-typedef struct {
+typedef struct
+{
     long time;
     double open;
     double high;
@@ -17,26 +18,33 @@ typedef struct {
     double volume;
 } Minute;
 
-typedef struct {
+typedef struct
+{
     int nbrMinutes;
     Minute *minutes;
 } Data;
 
-typedef struct {
-    long seed; 
+typedef struct
+{
+    long seed;
     long res;
 } Worker;
 
-__global__ void bake(Data data, Worker *workers) {
+__global__ void bake(Data data, Worker *workers)
+{
     int workerNbr = threadIdx.x + blockIdx.x * blockDim.x;
-    for (int i =0; i < data.nbrMinutes; i++){
-        if (data.minutes[i].open > workers[workerNbr].seed){
-            workers[workerNbr].res = 1;
-        }
-    }
+    workers[workerNbr].res = (workerNbr * 5 / 2 + 50 / 3 * 5) % 52 == 0 ? 1 : 0;
+    // for (int i = 0; i < data.nbrMinutes * 0.1; i++)
+    // {
+    //     if (data.minutes[i].open > workers[workerNbr].seed)
+    //     {
+
+    //     }
+    // }
 }
 
-Data loadMinutes(char *path) {
+Data loadMinutes(char *path)
+{
     Data data;
     int fd = open(path, O_RDONLY);
     struct stat buf;
@@ -44,7 +52,8 @@ Data loadMinutes(char *path) {
     off_t size = buf.st_size;
     cudaMallocManaged(&data.minutes, size);
     int rd = read(fd, data.minutes, size);
-    if (rd <= 0) {
+    if (rd <= 0)
+    {
         printf("ERROR LOAD FILE\n");
         exit(0);
     }
@@ -52,37 +61,78 @@ Data loadMinutes(char *path) {
     return data;
 }
 
-void printMinute(Minute *minute) {
+void printMinute(Minute *minute)
+{
     printf("%ld OPEN: %-10.5lf HIGH: %-10.5lf LOW: %-10.5lf CLOSE: %-10.5lf VOLUME: %-10.5lf\n",
            minute->time, minute->open, minute->high, minute->low,
            minute->close, minute->volume);
 }
 
-int main(){
-    Data data = loadMinutes("./data");
+void searchPike(Data data)
+{
+    printf("%d\n", data.nbrMinutes);
+    int founds = 0;
+    for (int i = 40; i < data.nbrMinutes - 40; i++)
+    {
+        double chien = data.minutes[i].open / data.minutes[i + 20].open;
+        if (chien > 1.025 || chien < 0.975)
+        {
+            printf("%lf %d\n", chien, founds);
+            founds += 1;
+        }
+    }
+}
 
-    int nbrX = 512;
-    int nbrY = 512;
+int main()
+{
+    Data data = loadMinutes("./data");
+    // searchPike(data);
+
+    int nbrX = 4096 * 8;
+    int nbrY = 1024;
     int nbrThreads = nbrX * nbrY;
 
+    // Worker *ramWorkers;
+    // malloc(ramWorkers, nbrThreads * sizeof(Worker));
+
     Worker *workers;
-    cudaMallocManaged(&workers, nbrThreads * sizeof(Worker));
-    for (int i=0; i < nbrThreads; i++){
-        workers[i].seed = (double)i;
+
+    cudaMalloc(&workers, nbrThreads * sizeof(Worker));
+    // workers = (Worker *)malloc(nbrThreads * sizeof(Worker));
+
+
+    // cudaMallocManaged(&workers, nbrThreads * sizeof(Worker));
+    for (long i = 0; 1; i++)
+    {
+        bake<<<nbrX, nbrY>>>(data, workers);
+        cudaDeviceSynchronize();
+        cudaError_t error = cudaGetLastError();
+        if (error != cudaSuccess)
+        {
+            printf("CUDA error: %s\n", cudaGetErrorString(error));
+            exit(-1);
+        }
+        if (i % 10 == 0)
+        {
+            printf("DONE %ld - %ld B\n", i, i * nbrX * nbrY / 1000000000);
+        }
+        if (i * nbrX * nbrY / 1000000000 >= 100){
+            // break;
+        }
     }
 
-    bake<<<512, 512>>>(data, workers);
-    cudaDeviceSynchronize();
-    cudaError_t error = cudaGetLastError();
-    if (error != cudaSuccess) {
-        printf("CUDA error: %s\n", cudaGetErrorString(error));
-        exit(-1);
-    }
+    // for (long i = 0; 1; i++)
+    // {
+    //     long chien = i * 5 / 2 + 50 / 3 * 5;
+    //     // workers[i % 2 == 0 ? 0 : 1] = chien;
+    //     workers[1].res = chien % 52 == 0 ? 1 : 0;
 
-    for (int i=0; i < nbrThreads; i++){
-        printf("%ld\n", workers[i].res);
-    }
+    //     if (i % 1000000 == 0)
+    //     {
+    //         printf("DONE %ldM\n", i / 1000000);
+    //     }
+    // }
 
-    printMinute(&data.minutes[0]);
+    // printMinute(&data.minutes[0]);
     return 0;
 }
